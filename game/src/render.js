@@ -338,6 +338,16 @@ export function resizeRenderer(r, w, h) {
   r.overlay = g; r.vignette = v;
 }
 
+/** 0 by day, rising from 19:00 to its deepest at 21:00, easing off after 05:00. */
+function duskAmount(state) {
+  if (state.mode === 'title' || state.dayMinute === undefined) return 0;
+  const m = state.dayMinute;
+  if (m >= 19 * 60) return Math.min(1, (m - 19 * 60) / 120) * 0.5;
+  if (m < 5 * 60) return 0.5;
+  if (m < 7 * 60) return (1 - (m - 5 * 60) / 120) * 0.5;
+  return 0;
+}
+
 // ---------------------------------------------------------------- entities
 
 function drawCar(ctx, v, t) {
@@ -754,6 +764,17 @@ export function renderFrame(r, state) {
   const heli = state.heli;
   if (heli && heli.active) {
     ctx.globalCompositeOperation = 'lighter';
+    // the searchlight: a cone of light from the nose down to the pool on the ground
+    const ca = Math.atan2(heli.spotY - heli.y, heli.spotX - heli.x) + Math.PI / 2;
+    const cone = ctx.createLinearGradient(heli.x, heli.y, heli.spotX, heli.spotY);
+    cone.addColorStop(0, 'rgba(255,250,220,0.32)'); cone.addColorStop(1, 'rgba(255,250,220,0.07)');
+    ctx.fillStyle = cone;
+    ctx.beginPath();
+    ctx.moveTo(heli.x + Math.cos(ca) * 5, heli.y + Math.sin(ca) * 5);
+    ctx.lineTo(heli.spotX + Math.cos(ca) * 88, heli.spotY + Math.sin(ca) * 88);
+    ctx.lineTo(heli.spotX - Math.cos(ca) * 88, heli.spotY - Math.sin(ca) * 88);
+    ctx.lineTo(heli.x - Math.cos(ca) * 5, heli.y - Math.sin(ca) * 5);
+    ctx.closePath(); ctx.fill();
     ctx.fillStyle = 'rgba(255,250,220,0.16)';
     ctx.beginPath(); ctx.arc(heli.spotX, heli.spotY, 90, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = 'rgba(255,250,220,0.12)';
@@ -790,6 +811,33 @@ export function renderFrame(r, state) {
   // light: golden-hour grade and vignette over the whole frame
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = r.overlay; ctx.fillRect(0, 0, w, h);
+  // dusk: as the HUD clock runs past 19:00 the coast sinks into violet (cosmetic only)
+  const dusk = duskAmount(state);
+  if (dusk > 0) {
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.fillStyle = `rgba(150,105,190,${dusk.toFixed(3)})`; ctx.fillRect(0, 0, w, h);
+    // sodium streetlamps on the four corners of every junction in view, warming up with the dusk
+    ctx.globalCompositeOperation = 'lighter';
+    const glow = Math.min(1, dusk / 0.3);
+    const lr = 70 * z, off = WORLD.tile * 1.25;
+    for (let i = 0; i < ROADS_X; i += 1) {
+      const jx = roadCenter(i);
+      if (jx < view.x0 - 120 || jx > view.x1 + 120) continue;
+      for (let j = 0; j < ROADS_Y; j += 1) {
+        const jy = roadCenter(j);
+        if (jy < view.y0 - 120 || jy > view.y1 + 120) continue;
+        for (const [dx, dy] of [[-off, -off], [off, -off], [-off, off], [off, off]]) {
+          const sx = (jx + dx - cam.x) * z + w / 2 + cam.ox, sy = (jy + dy - cam.y) * z + h / 2 + cam.oy;
+          const g = ctx.createRadialGradient(sx, sy, 0, sx, sy, lr);
+          g.addColorStop(0, `rgba(255,190,110,${(0.42 * glow).toFixed(3)})`);
+          g.addColorStop(0.35, `rgba(255,150,80,${(0.16 * glow).toFixed(3)})`);
+          g.addColorStop(1, 'rgba(255,140,70,0)');
+          ctx.fillStyle = g; ctx.fillRect(sx - lr, sy - lr, lr * 2, lr * 2);
+        }
+      }
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }
   ctx.fillStyle = r.vignette; ctx.fillRect(0, 0, w, h);
   if (state.flash > 0) {
     ctx.fillStyle = `rgba(255,40,40,${Math.min(0.45, state.flash)})`;

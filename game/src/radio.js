@@ -8,7 +8,7 @@ import { RADIO } from './config.js';
 export const STATIONS = [
   {
     id: 'sol',
-    name: 'SOL FM',
+    name: 'RADIO SOL',
     frequency: '98.7',
     kind: 'Pop y salsa',
     tracks: ['Bayside Drive', 'Ámbar Nights', 'Costa Rosada', 'Slow Traffic', 'Muelle 5'],

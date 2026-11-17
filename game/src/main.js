@@ -14,7 +14,7 @@ import { defineMissions } from './missions.js';
 import { defineActivities } from './activities.js';
 import { beginDay } from './story.js';
 import { updateDistricts, resetDistricts } from './districts.js';
-import { createRadio, updateRadio, toggleMute } from './radio.js';
+import { createRadio, updateRadio, toggleMute, radioLine } from './radio.js';
 import { updateShop, restoreOwned } from './shop.js';
 import { witnessShot, updateWitnesses } from './witnesses.js';
 import { initHud, updateHud, pushNotice } from './hud.js';
@@ -69,7 +69,7 @@ function createState() {
   };
   s.busted = () => die('BUSTED', 'station');
   s.spawnAt = (pt) => spawnPlayer(pt, true);
-  s.onEnterCar = (v) => { if (!v.police && s.time - (s.lastRadio || -99) > 40) { s.lastRadio = s.time; s.notify('♪ Radio Sol 98.7 — "Sundown Drive"', '#7ff0e0'); } };
+  s.onEnterCar = (v) => { if (!v.police && s.time - (s.lastRadio || -99) > 40) { s.lastRadio = s.time; s.notify(`♪ ${radioLine(s.radio).text}`, '#7ff0e0'); } };
   s.save = () => saveGame(s);
   return s;
 }
@@ -84,6 +84,7 @@ addEventListener('keydown', (e) => {
   initAudio();
   if ((e.code === 'Escape' || e.code === 'KeyP') && !e.repeat) togglePause();
   if (state.mode === 'title' && (e.code === 'Enter' || e.code === 'Space')) startGame(hasSave());
+  if (e.code === state.radio.key && !e.repeat && state.mode !== 'title') toggleMute(state, state.radio);
 });
 addEventListener('keyup', (e) => input.keys.delete(e.code));
 addEventListener('blur', () => { input.keys.clear(); input.mouse.down = false; if (state.mode === 'play') togglePause(); });
@@ -141,6 +142,7 @@ function startGame(fromSave) {
     state.wanted.level = save.wanted;
   }
   populate(state);
+  resetDistricts(state);
   beginDay(state);
   state.notify(save ? 'Welcome back to Puerto Ámbar' : 'Puerto Ámbar. 6:40 pm.', '#ffcf5a');
   sfx('start', 0.8);
@@ -233,6 +235,10 @@ function stepWorld(dt) {
     updateJobs(state, dt);
     updateShop(state);
     updateWitnesses(state, dt);
+    updateDistricts(state, dt);
+    // the clock and the radio run with play; the HUD reads them, the simulation never does
+    state.dayMinute = (state.dayMinute + dt * CLOCK.minutePerSecond) % (CLOCK.dayLength * 60);
+    updateRadio(state, state.radio, dt);
   }
   if (state.mode !== 'pause') {
     updateTraffic(state, dt);

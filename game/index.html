@@ -34,19 +34,29 @@
   #bustWrap { position: absolute; left: 50%; top: 62%; width: 160px; margin-left: -80px; }
   #bustBar { background: #5a9bff; width: 0; }
 
-  #objective { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); max-width: 46vw; text-align: center;
+  #missionStack { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  #mlabel { font: italic 900 22px Impact, "Arial Black", sans-serif; letter-spacing: 2px; color: #ffd23f; white-space: nowrap; }
+  #objective { max-width: 46vw; text-align: center;
     font-size: 19px; font-weight: 800; padding: 8px 18px; background: rgba(20,10,30,0.55); border-left: 4px solid #ffcf5a; border-radius: 4px; }
-  #distance { position: absolute; top: 58px; left: 50%; transform: translateX(-50%); font-size: 15px; font-weight: 800; letter-spacing: 1px;
+  #distance { font-size: 15px; font-weight: 800; letter-spacing: 1px;
     color: #fff; padding: 2px 12px; background: rgba(20,10,30,0.45); border-radius: 4px; white-space: nowrap; }
-  #radio { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); font-size: 15px; font-weight: 800; letter-spacing: 1px;
-    color: #bfe9ff; padding: 4px 14px; background: rgba(10,5,20,0.55); border-radius: 4px; white-space: nowrap; }
-  #radio.muted { color: #8a8a94; }
-  #timer { position: absolute; top: 66px; left: 50%; transform: translateX(-50%); font-size: 30px; font-weight: 900; color: #fff; }
+  #corner { position: absolute; top: 16px; left: 22px; max-width: 30vw; }
+  #clock { font: italic 900 26px Impact, "Arial Black", sans-serif; letter-spacing: 2px; color: #fff; }
+  #clock b { color: #ffcf5a; font-weight: 900; margin-right: 8px; }
+  #radio { display: inline-block; margin-top: 4px; padding: 3px 10px; font-size: 14px; font-weight: 800; letter-spacing: 1px; color: #bfe9ff; white-space: nowrap; background: rgba(10,5,20,0.55); border-radius: 4px; }
+  #radio .st { color: #ff9ad0; margin-right: 6px; }
+  #radio.muted, #radio.muted .st { color: #8a8a94; }
+  #locBanner { margin-top: 12px; padding: 6px 14px 8px 12px; border-left: 5px solid #ff3d7f; background: linear-gradient(90deg, rgba(25,8,35,0.7), rgba(25,8,35,0)); animation: locIn .35s ease-out; }
+  #locName { font: italic 900 34px Impact, "Arial Black", sans-serif; letter-spacing: 3px; line-height: 1; color: #ffcf5a;
+    text-shadow: 0 0 2px #2a0a2a, 3px 3px 0 #b8205a, -1px -1px 0 #2a0a2a, 1px -1px 0 #2a0a2a, -1px 1px 0 #2a0a2a; }
+  #locTag { font-size: 15px; font-style: italic; font-weight: 700; color: #ffe8d0; margin-top: 3px; }
+  @keyframes locIn { from { transform: translateX(-30px); opacity: 0; } to { transform: none; opacity: 1; } }
+  #timer { font-size: 30px; font-weight: 900; color: #fff; }
   #timer.urgent { color: #ff5a5a; }
-  #dialogue { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); width: min(720px, 60vw); text-align: center;
-    font-size: 20px; line-height: 1.35; padding: 10px 16px; background: rgba(15,8,25,0.6); border-radius: 6px; }
+  #dialogue { position: absolute; bottom: 34px; left: 50%; transform: translateX(-50%); max-width: min(640px, 50vw); white-space: nowrap; text-align: center;
+    font-size: 21px; line-height: 1.35; padding: 10px 16px; background: rgba(15,8,25,0.6); border-radius: 6px; }
   #speaker { font-weight: 900; margin-right: 8px; letter-spacing: 1px; }
-  #hint { position: absolute; bottom: 58px; left: 50%; transform: translateX(-50%); font-size: 16px; font-weight: 700; color: #ffe8b0;
+  #hint { position: absolute; bottom: 92px; left: 50%; transform: translateX(-50%); font-size: 16px; font-weight: 700; color: #ffe8b0;
     background: rgba(0,0,0,0.45); padding: 4px 12px; border-radius: 4px; }
   #banner { position: absolute; top: 36%; left: 0; right: 0; text-align: center; animation: pop .35s cubic-bezier(.2,1.6,.4,1); }
   @keyframes pop { from { transform: scale(1.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -99,15 +109,22 @@
     <div class="bar"><div id="arBar"></div></div>
   </div>
   <div id="bustWrap" class="bar hidden"><div id="bustBar"></div></div>
-  <div id="objective" class="outline hidden"></div>
-  <div id="distance" class="outline hidden"></div>
-  <div id="timer" class="outline hidden"></div>
+  <div id="missionStack">
+    <div id="mlabel" class="outline hidden"></div>
+    <div id="objective" class="outline hidden"></div>
+    <div id="distance" class="outline hidden"></div>
+    <div id="timer" class="outline hidden"></div>
+  </div>
+  <div id="corner" class="outline">
+    <div id="clock"><b>DAY 1</b>18:24</div>
+    <div id="radio"></div>
+    <div id="locBanner" class="hidden"><div id="locName"></div><div id="locTag"></div></div>
+  </div>
   <div id="dialogue" class="outline hidden"><span id="speaker"></span><span id="line"></span></div>
   <div id="hint" class="hidden"></div>
   <div id="briefing" class="hidden"><div id="brTitle"></div><div id="brGiver"></div><div id="brText"></div><div id="brReward"></div><div id="brGo">PRESS ENTER TO START</div></div>
   <div id="banner" class="outline hidden"><div id="bannerTitle"></div><div id="bannerSub"></div></div>
   <div id="speedo" class="outline hidden"><span id="speedVal">0</span><span id="speedUnit">KM/H</span><div id="carName"></div></div>
-  <div id="radio" class="outline">SOL FM · Bayside Drive</div>
 </div>
 
 <div id="title" class="screen">
@@ -123,6 +140,7 @@
     <b>F</b><span>steal / enter / exit car</span><b>SHIFT</b><span>sprint</span>
     <b>MOUSE</b><span>aim, click to shoot</span><b>Q</b><span>switch weapon</span>
     <b>H</b><span>horn</span><b>ESC</b><span>pause &amp; save</span>
+    <b>M</b><span>mute radio</span>
   </div>
 </div>
 

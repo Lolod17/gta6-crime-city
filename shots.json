@@ -1,6 +1,6 @@
 [
-  { "name": "1-chase.jpg", "scene": "Job 2 (Heat): a three-star pursuit downtown, cruisers boxing the player in, objective timer, minimap", "how": "played with real keyboard input in Chrome at 1280x720, frame kept by tools sampler" },
-  { "name": "2-shootout.jpg", "scene": "Job 3 (Score): on foot with the SMG clearing the Glasshand yard, tracers, crew count, dialogue", "how": "real keyboard and mouse input" },
-  { "name": "3-collection.jpg", "scene": "Job 1 (Collection): driving to the marina under the timer while Inés briefs Rio", "how": "real keyboard input" },
-  { "name": "4-title.jpg", "scene": "Title screen over the live city", "how": "title screen, no input" }
+  { "name": "1-cover-dash.jpg", "scene": "Mission 4/12, THE DASH: the Marlin GT at 179 km/h with two stars, mission label with the countdown, objective, distance to the safehouse, SOUTHSIDE district banner with its tagline, DAY 1 clock, radio line, Inés on the line, minimap with the objective dot, cash, health, speedometer", "how": "played with real keyboard input in Chrome at 1280x720; a sampler kept the frame only when every layer was on screen at once" },
+  { "name": "2-on-foot.jpg", "scene": "On foot with the pistol on a residential street, a shot's tracer in the air, pedestrians, and witnesses phoning the PAPD", "how": "real keyboard and mouse input" },
+  { "name": "3-four-star-heli.jpg", "scene": "Mission 10/12, HEAT: four stars, cruisers at the junction, the PAPD helicopter's searchlight cone on the player, CENTRO banner, Dario on the line", "how": "real keyboard input" },
+  { "name": "4-dusk-street.jpg", "scene": "A quiet street at 21:04: the coast in violet dusk with the sodium streetlamps lit at every junction", "how": "real keyboard input, a walk while the clock ran into the evening" }
 ]

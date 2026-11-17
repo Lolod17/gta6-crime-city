@@ -20,25 +20,25 @@ export const DAYS = [
   {
     title: 'LEARN THE CITY',
     lines: [
-      ['INES', 'New in Puerto Ámbar? Learn its streets before they learn your face.'],
-      ['DARIO', 'Inés says you can drive. Show me on the boulevard, not in a story.'],
-      ['NANDO', 'Bar Caracol hears everything, kid. Today it hears your name for the first time.'],
+      ['INES', 'Learn these streets, Rio. Fast.'],
+      ['DARIO', 'Inés says you drive. Prove it.'],
+      ['NANDO', 'Bar Caracol hears everything, kid.'],
     ],
   },
   {
     title: 'THE CREW',
     lines: [
-      ['INES', 'Yesterday you were a driver. Today you\'re crew — act like it.'],
-      ['DARIO', 'Teo Castellan\'s Glasshands want our streets. Make them look slow.'],
-      ['NANDO', 'Somebody paid to have me quiet. Keep me breathing and I keep talking.'],
+      ['INES', 'Today you\'re crew. Act like it.'],
+      ['DARIO', 'Glasshands want our streets. Embarrass them.'],
+      ['NANDO', 'Someone wants me quiet. Help.'],
     ],
   },
   {
     title: 'THE HEAT',
     lines: [
-      ['INES', 'Teo has the harbour ledger. Whoever holds it owns this city.'],
-      ['DARIO', 'Last day of hard work, Rio. Then we all get rich. Well — somebody does.'],
-      ['NANDO', 'Watch Dario at the docks. A man who counts that fast is counting you too.'],
+      ['INES', 'Teo has the harbour ledger.'],
+      ['DARIO', 'Last day. Then we\'re rich.'],
+      ['NANDO', 'Watch Dario. He counts fast.'],
     ],
   },
 ];
@@ -86,6 +86,7 @@ export function beginDay(state) {
   const d = DAYS[day];
   if (!d) return;
   state.dayCard = { title: `DAY ${day}`, sub: d.title, life: 4 };
+  state.dayMinute = 18 * 60 + 24;   // every day of the story opens at dusk
   queueLines(state, d.lines);
 }
 

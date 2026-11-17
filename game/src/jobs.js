@@ -129,8 +129,8 @@ function passJob(state) {
     state.stats.missions = state.progress.done.length;
     if (storyComplete(state)) {
       const end = state.progress.ending === 'sold'
-        ? 'THE END — you sold the ledger. Rich, hunted, alone. Puerto Ámbar keeps its doors open for you anyway.'
-        : 'THE END — Inés holds the ledger and the harbour with it. Puerto Ámbar is yours to drive.';
+        ? 'THE END — rich, hunted, alone.'
+        : 'THE END — the harbour is yours.';
       state.dialogueQueue.push(['', end, '#fff']);
     }
   } else {
@@ -214,7 +214,8 @@ export function updateJobs(state, dt) {
       objective: next ? `Next: ${next.title} — meet ${CAST[next.giver].full} at the yellow marker` : 'Free roam — side jobs at the blue markers',
       timer: null,
       index: next ? missionIndex(state, next) : { n: null, total: state.missionDefs.length },
-      point: next ? next.start : null,
+      point: next ? next.start : null, title: next ? next.title : null, kind: next ? 'mission' : null,
+      to: next ? CAST[next.giver].full : null, active: false,
     };
     return;
   }
@@ -223,6 +224,11 @@ export function updateJobs(state, dt) {
   if (m.timer !== null) {
     m.timer -= dt;
     if (m.timer <= 0 && !st.survive) { failMission(state, st.timeout || 'Out of time.'); return; }
+    // cue lines: [seconds left, who, text] spoken once as a timed stage's clock runs down
+    for (const cue of st.cues || []) {
+      const key = `${m.stage}:${cue[0]}`;
+      if (m.timer <= cue[0] && !(m.cued ||= new Set()).has(key)) { m.cued.add(key); say(state, cue[1], cue[2]); }
+    }
   }
   if (m.crew.length) {
     updateCrew(state, m.crew, dt, m.targets, m.fight);
@@ -237,7 +243,7 @@ export function updateJobs(state, dt) {
   refreshMarkers(state);
   const cur = m.def.stages[m.stage];
   state.missionView = {
-    objective: m.objectiveOverride || cur.objective, timer: m.timer, title: m.def.title,
+    objective: m.objectiveOverride || cur.objective, timer: m.timer, title: m.def.title, kind: m.def.kind, active: true,
     index: missionIndex(state, m.def), point: objectivePoint(state),
   };
 }

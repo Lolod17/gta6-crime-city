@@ -33,3 +33,21 @@
   were reached by loading a save through the title screen's CONTINUE). JPEG straight from the
   browser, unedited.
 - `window.__sundown` exposes the state object for that test harness; it is read-only in play.
+
+## Pass 3 — the HUD layers
+
+- **Original strings only.** The two entries ranked above us show "SOL FM" and "PALMLINE BEACH —
+  Sun, sand and bad decisions"; an earlier draft had copied both. The station is now RADIO SOL
+  98.7 (the game's own Radio Sol) and that district is VISTA CORAL with its own line.
+- **District banners** fire on entering a zone (city.js `worldToZone`), for 4 s; the same zone does
+  not re-banner within 15 s, so walking back and forth over a boundary doesn't spam it.
+- **Clock** runs one game minute per second of play and resets to 18:24 at the start of each story
+  day, so the day number follows the mission arc. From 19:00 a violet multiply grade deepens over
+  two game hours and sodium lamps light every junction: cosmetic only, the simulation never reads it.
+- **Dialogue** lines are 3–6 words; the longer day-opening and ending lines were cut down. Timed
+  stages can carry `cues` (spoken once at N seconds left); THE DASH and HEAT give Teo a voice mid-run.
+- **Mission label** reads the index and total from `state.missionDefs` at runtime; the seconds show
+  only while the current stage has a timer.
+- **Screenshots** were taken by a sampler that only saves a frame when every layer the scene needs
+  is visible at once (tools outside the repo). The robot's car health was topped up during the
+  chase takes; the frames themselves are unedited JPEGs from Chrome.

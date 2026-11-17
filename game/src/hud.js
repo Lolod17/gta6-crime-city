@@ -5,31 +5,46 @@ import { HUD, WORLD, POLICE } from './config.js';
 import { roadCenter, ROADS_X, ROADS_Y } from './city.js';
 import { evadeTime } from './police.js';
 import { radioLine } from './radio.js';
+import { districtAt } from './districts.js';
 
 const $ = (id) => document.getElementById(id);
 const MM_SCALE = 0.09;
 /** One world pixel is one metre: the distances the HUD prints, and nothing in the simulation. */
 const METRES_PER_PX = 1;
-const NAMED = { INES: 'Inés Ocampo', DARIO: 'Dario Kell', NANDO: 'Nando Reyes', TEO: 'Teo Castellan' };
 
-/** The objective line with its runtime index: "MISI 4/12 — COLLECTION". */
-function missionLine(obj, idx) {
-  if (!idx || !idx.n || !obj) return obj || '';
-  return `MISI ${idx.n}/${idx.total} — ${obj}`;
+/**
+ * The mission label: "MISSION 4/12 — HEAT — 40s". The position and the total come from the
+ * mission list at runtime (jobs.js missionIndex); the seconds appear only while the stage runs a
+ * clock. Side jobs read "SIDE JOB — RAMPAGE — 60s".
+ */
+export function missionLabel(view) {
+  if (!view) return '';
+  const secs = view.active && view.timer !== undefined && view.timer !== null ? ` — ${Math.max(0, Math.ceil(view.timer))}s` : '';
+  if (view.kind === 'mission' && view.index && view.index.n) return `MISSION ${view.index.n}/${view.index.total} — ${view.title}${secs}`;
+  if (view.kind && view.title) return `SIDE JOB — ${view.title}${secs}`;
+  if (view.index && view.index.total && !view.index.n) return `ALL ${view.index.total} MISSIONS DONE`;
+  return '';
 }
 
-/** Distance to the objective: "214 m to Inés Ocampo". */
-function distanceLine(state, m) {
-  const pt = m.point;
+/** Distance to the objective: "214 m to Inés Ocampo" before a job, "1259 m to MARINA SOL" during one. */
+export function distanceLine(state, view) {
+  const pt = view && view.point;
   if (!pt) return '';
   const body = state.player.car || state.player;
   const d = Math.round(Math.hypot(pt.x - body.x, pt.y - body.y) * METRES_PER_PX);
-  return m.title ? `${d} m to ${m.title}` : `${d} m to the objective`;
+  if (d < 25) return '';
+  return `${d} m to ${view.to || pt.label || districtAt(state.city, pt.x, pt.y).name}`;
+}
+
+/** "DAY 1 18:24": the story day from the mission arc and the clock from play. */
+export function clockParts(state) {
+  const mins = Math.floor(state.dayMinute || 0);
+  return { day: `DAY ${state.progress.day}`, time: `${String(Math.floor(mins / 60) % 24).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}` };
 }
 
 export function initHud(state) {
   const els = {};
-  for (const id of ['hud', 'money', 'stars', 'weapon', 'hpBar', 'arBar', 'minimap', 'objective', 'timer', 'notices',
+  for (const id of ['hud', 'mlabel', 'distance', 'clock', 'radio', 'locBanner', 'locName', 'locTag', 'money', 'stars', 'weapon', 'hpBar', 'arBar', 'minimap', 'objective', 'timer', 'notices',
     'dialogue', 'speaker', 'line', 'banner', 'briefing', 'brTitle', 'brGiver', 'brText', 'brReward', 'bannerTitle', 'bannerSub', 'speedo', 'speedVal', 'carName', 'hint', 'status', 'bustBar']) els[id] = $(id);
   const stars = [];
   els.stars.innerHTML = '';
@@ -129,6 +144,22 @@ export function updateHud(state, dt) {
     els.timer.textContent = v === '' ? '' : `${Math.floor(v / 60)}:${String(v % 60).padStart(2, '0')}`;
     els.timer.classList.toggle('hidden', v === '');
     els.timer.classList.toggle('urgent', v !== '' && v <= 10);
+  });
+  set(els, 'mlabel', missionLabel(state.missionView), (v) => { els.mlabel.textContent = v; els.mlabel.classList.toggle('hidden', !v); });
+  set(els, 'distance', distanceLine(state, m), (v) => { els.distance.textContent = v; els.distance.classList.toggle('hidden', !v); });
+  const ck = clockParts(state);
+  set(els, 'clock', ck.day + ck.time, () => { els.clock.innerHTML = `<b>${ck.day}</b>${ck.time}`; });
+  const rl = radioLine(state.radio);
+  set(els, 'radio', rl.text, () => {
+    els.radio.innerHTML = '';
+    const st = document.createElement('span'); st.className = 'st'; st.textContent = `♪ ${rl.station} ${rl.frequency}`;
+    els.radio.append(st, rl.muted ? 'MUTED · M to unmute' : `${rl.track} · M mute`);
+    els.radio.classList.toggle('muted', rl.muted);
+  });
+  const lb = state.locationBanner;
+  set(els, 'loc', lb ? lb.name : '', () => {
+    els.locBanner.classList.toggle('hidden', !lb);
+    if (lb) { els.locName.textContent = lb.name; els.locTag.textContent = lb.tagline; }
   });
   const dl = state.dialogue;
   set(els, 'dialogue', dl ? dl.speaker + dl.text : '', () => {

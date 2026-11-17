@@ -160,7 +160,7 @@ export const HUD = {
 /** The in-game clock: 1 real second = clockMinutes of game time; a day starts at 18:00. */
 export const CLOCK = {
   startMinute: 18 * 60,  // 18:24 once the opening seconds have run (see main.js)
-  minutePerSecond: 2,    // one real second advances the clock by two game minutes
+  minutePerSecond: 1,    // one real second advances the clock by one game minute
   dayLength: 24,         // hours on the dial
 };
 

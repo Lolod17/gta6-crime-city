@@ -92,6 +92,7 @@ export function defineMissions(city) {
       stages: [
         {
           objective: 'Get to the marina warehouse', timer: 90,
+          cues: [[60, 'INES', 'Marina gate closes soon.']],
           marker: () => markerAt(P.pickup, Y, 'PICKUP'),
           update(state) { if (near(state.player, P.pickup, 55)) return 'next'; },
         },
@@ -116,7 +117,7 @@ export function defineMissions(city) {
         ['NANDO', 'Two hundred glasses. Hotel Miramar.'],
         ['NANDO', 'Their bar, my reputation.'],
       ],
-      outro: ['NANDO', 'Every glass counted. Come by the bar.'],
+      outro: ['NANDO', 'Every glass counted. Come by.'],
       stages: [
         {
           objective: 'Get in the Mule Van behind Bar Caracol',
@@ -149,7 +150,7 @@ export function defineMissions(city) {
         ['DARIO', 'Follow him. Don\'t let him see.'],
         ['RIO', 'Close to see, far to vanish.'],
       ],
-      outro: ['DARIO', 'He met the Glasshands. Teo\'s buying the harbour.'],
+      outro: ['DARIO', 'Teo\'s buying the harbour.'],
       stages: [
         getACar('Get in a car for the tail'),
         {
@@ -189,6 +190,7 @@ export function defineMissions(city) {
         getACar('Get in a car — the PAPD is coming'),
         {
           objective: 'Get the bag to the safehouse', timer: 80,
+          cues: [[70, 'TEO', 'Run home, little driver. Run.'], [50, 'INES', 'Garage is open. Hurry!'], [25, 'TEO', 'Ocampo picks slow drivers.']],
           timeout: 'Too slow — the PAPD boxed you in.',
           marker: () => markerAt(P.safehouse, '#7fd0ff', 'SAFEHOUSE', 50),
           enter(state) {
@@ -302,7 +304,7 @@ export function defineMissions(city) {
         ['NANDO', 'They paid to shut me up!'],
         ['RIO', 'Stay behind me. Don\'t run.'],
       ],
-      outro: ['NANDO', 'I owe you my neck. Dario talks to Teo.'],
+      outro: ['NANDO', 'Careful. Dario talks to Teo.'],
       stages: [
         {
           objective: 'Protect Nando from the hit squad',
@@ -427,7 +429,7 @@ export function defineMissions(city) {
       briefing: 'Teo Castellan\'s gold Aurelia sits outside his downtown office. Steal it and deliver it to the container lot at the marina with at least 60% of its bodywork — a buyer is waiting.',
       dialogue: [
         ['DARIO', 'Teo loves one thing: the Aurelia.'],
-        ['DARIO', 'A scratch costs us. A dent costs you.'],
+        ['DARIO', 'A dent costs you. Drive soft.'],
       ],
       outro: ['DARIO', 'Good car. Now the real job.'],
       stages: [
@@ -466,13 +468,14 @@ export function defineMissions(city) {
       dialogue: [
         ['DARIO', 'I need every cruiser on you.'],
         ['RIO', 'How many cruisers?'],
-        ['DARIO', 'All of them. Forty seconds. Paint & Pray.'],
+        ['DARIO', 'All of them. Forty seconds.'],
       ],
       outro: ['DARIO', 'We have the ledger. Muelle Cinco.'],
       stages: [
         getACar(),
         {
           objective: 'Survive the four-star pursuit', timer: 40, survive: true,
+          cues: [[30, 'TEO', 'Hear that, Rio? Helicopters.'], [15, 'DARIO', 'Fifteen more. Keep moving!']],
           enter(state) { setWanted(state, 4, 4, 4); state.notify('Every cruiser is on you', RED); },
           update(state, m) { if (m.timer <= 0) return 'next'; },
         },
@@ -548,8 +551,8 @@ export function defineMissions(city) {
         ['NANDO', 'One pays in trust. Choose.'],
       ],
       outro: (state, m) => (m.choice === 'sold'
-        ? ['NANDO', 'Fourteen thousand and every cop in town. Don\'t come by the bar for a while.']
-        : ['INES', 'Loyalty is expensive, Rio. Today I pay for it. Puerto Ámbar is ours.']),
+        ? ['NANDO', 'Rich now. Stay away a while.']
+        : ['INES', 'Loyalty paid. The city\'s ours.']),
       stages: [
         {
           objective: 'Choose: Inés at the taqueria ($6,000) or the broker at the marina ($14,000)',
