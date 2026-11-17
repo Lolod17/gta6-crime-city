@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SUNDOWN: Puerto Ámbar</title>
+<link rel="icon" href="data:,">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #17708f; font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif; user-select: none; }
+  #game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; }
+  .hidden { display: none !important; }
+  .outline { text-shadow: 0 0 2px #000, 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000; }
+
+  /* HUD */
+  #hud { position: fixed; inset: 0; pointer-events: none; color: #fff; }
+  #topRight { position: absolute; top: 18px; right: 24px; text-align: right; }
+  #stars { font-size: 34px; letter-spacing: 2px; line-height: 1; }
+  #stars span { color: rgba(0,0,0,0.35); -webkit-text-stroke: 1.5px rgba(255,255,255,0.55); }
+  #stars span.lit { color: #ffd23f; -webkit-text-stroke: 1.5px #5a3a00; filter: drop-shadow(0 0 6px rgba(255,200,60,0.7)); }
+  #stars span.flash { color: #fff; -webkit-text-stroke: 1.5px #5a3a00; }
+  #stars span.dim { color: rgba(255,210,63,0.35); -webkit-text-stroke: 1.5px #5a3a00; }
+  #money { font-size: 34px; font-weight: 900; color: #7dff8a; margin-top: 4px; letter-spacing: 1px; }
+  #weapon { font-size: 15px; font-weight: 800; margin-top: 4px; color: #ffe8b0; letter-spacing: 2px; }
+  #notices { margin-top: 10px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  .notice { font-size: 19px; font-weight: 800; transition: opacity .2s; text-shadow: 0 0 2px #000, 2px 2px 0 #000; }
+
+  #mmWrap { position: absolute; left: 22px; bottom: 22px; width: 210px; }
+  #minimap { display: block; width: 210px; height: 210px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); }
+  .bar { height: 9px; margin-top: 7px; background: rgba(0,0,0,0.55); border: 2px solid rgba(0,0,0,0.7); border-radius: 5px; overflow: hidden; }
+  .bar > div { height: 100%; width: 100%; transition: width .15s; }
+  #hpBar { background: linear-gradient(90deg, #3fd06a, #8dff6a); }
+  #hpBar.low { background: linear-gradient(90deg, #ff3b3b, #ff8a3b); }
+  #arBar { background: linear-gradient(90deg, #4aa8ff, #9ad7ff); }
+  #bustWrap { position: absolute; left: 50%; top: 62%; width: 160px; margin-left: -80px; }
+  #bustBar { background: #5a9bff; width: 0; }
+
+  #objective { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); max-width: 46vw; text-align: center;
+    font-size: 19px; font-weight: 800; padding: 8px 18px; background: rgba(20,10,30,0.55); border-left: 4px solid #ffcf5a; border-radius: 4px; }
+  #timer { position: absolute; top: 66px; left: 50%; transform: translateX(-50%); font-size: 30px; font-weight: 900; color: #fff; }
+  #timer.urgent { color: #ff5a5a; }
+  #dialogue { position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%); width: min(720px, 60vw); text-align: center;
+    font-size: 20px; line-height: 1.35; padding: 10px 16px; background: rgba(15,8,25,0.6); border-radius: 6px; }
+  #speaker { font-weight: 900; margin-right: 8px; letter-spacing: 1px; }
+  #hint { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); font-size: 16px; font-weight: 700; color: #ffe8b0;
+    background: rgba(0,0,0,0.45); padding: 4px 12px; border-radius: 4px; }
+  #banner { position: absolute; top: 36%; left: 0; right: 0; text-align: center; animation: pop .35s cubic-bezier(.2,1.6,.4,1); }
+  @keyframes pop { from { transform: scale(1.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes slideIn { from { transform: translate(-50%, -40%); opacity: 0; } to { transform: translate(-50%, -60%); opacity: 1; } }
+  .screen { transition: opacity .4s; }
+  #bannerTitle { font-size: 86px; font-weight: 900; font-style: italic; letter-spacing: 4px; font-family: Impact, "Arial Black", sans-serif; }
+  #bannerSub { font-size: 22px; font-weight: 700; margin-top: 6px; }
+  #briefing { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -60%); width: min(560px, 70vw); padding: 22px 28px;
+    background: linear-gradient(135deg, rgba(40,10,50,0.92), rgba(90,25,60,0.88)); border-top: 5px solid #ffcf5a; border-radius: 6px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); animation: slideIn .3s ease-out; }
+  #brTitle { font: italic 900 38px Impact, "Arial Black", sans-serif; letter-spacing: 2px; color: #ffcf5a; }
+  #brGiver { font-size: 15px; font-weight: 800; letter-spacing: 3px; color: #7ff0e0; margin-bottom: 10px; }
+  #brText { font-size: 18px; line-height: 1.45; }
+  #brReward { margin-top: 14px; font-size: 20px; font-weight: 900; color: #7dff8a; }
+  #brGo { margin-top: 8px; font-size: 15px; font-weight: 800; color: #ffe8b0; letter-spacing: 2px; }
+  #speedo { position: absolute; right: 26px; bottom: 24px; text-align: right; }
+  #speedVal { font-size: 46px; font-weight: 900; font-style: italic; font-family: Impact, "Arial Black", sans-serif; }
+  #speedUnit { font-size: 15px; font-weight: 800; margin-left: 4px; }
+  #carName { font-size: 14px; font-weight: 800; letter-spacing: 2px; color: #ffe8b0; }
+
+  /* title and pause screens */
+  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; padding-left: 8vw; color: #fff;
+    background: linear-gradient(90deg, rgba(25,8,35,0.82) 0%, rgba(40,10,40,0.45) 45%, rgba(0,0,0,0) 75%); }
+  .logo { font-family: Impact, "Arial Black", sans-serif; font-style: italic; font-size: clamp(64px, 11vw, 150px); line-height: 0.9; letter-spacing: 3px;
+    background: linear-gradient(180deg, #ffe066 0%, #ff9a3c 45%, #ff3d7f 80%, #b23cff 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(4px 5px 0 rgba(40,0,40,0.75)); }
+  .sub { font-size: clamp(18px, 2.4vw, 30px); font-weight: 900; letter-spacing: 12px; color: #7ff0e0; margin: 6px 0 4px 6px; text-shadow: 2px 2px 0 #1a0a2a; }
+  .tag { font-size: 17px; font-style: italic; color: #ffd9b0; margin: 0 0 28px 6px; }
+  .menu button { display: block; pointer-events: auto; min-width: 260px; margin: 8px 0; padding: 12px 22px; text-align: left; font: 900 22px "Trebuchet MS", sans-serif;
+    letter-spacing: 3px; color: #fff; background: rgba(255,255,255,0.08); border: 0; border-left: 5px solid #ff9a3c; cursor: pointer; }
+  .menu button:hover, .menu button:focus { background: linear-gradient(90deg, rgba(255,90,140,0.55), rgba(255,154,60,0.0)); outline: none; }
+  .menu button:disabled { opacity: 0.35; cursor: default; }
+  .controls { margin-top: 26px; font-size: 14px; line-height: 1.8; color: #f2e6d8; display: grid; grid-template-columns: 90px 190px 90px 190px; }
+  .controls b { color: #ffcf5a; }
+  #status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="SUNDOWN: Puerto Ámbar, an open-world crime game: drive, steal cars, outrun the police and finish three jobs"></canvas>
+
+<div id="hud" class="hidden">
+  <div id="topRight" class="outline">
+    <div id="stars"></div>
+    <div id="money">$0</div>
+    <div id="weapon">PISTOL</div>
+    <div id="notices"></div>
+  </div>
+  <div id="mmWrap">
+    <canvas id="minimap" width="210" height="210"></canvas>
+    <div class="bar"><div id="hpBar"></div></div>
+    <div class="bar"><div id="arBar"></div></div>
+  </div>
+  <div id="bustWrap" class="bar hidden"><div id="bustBar"></div></div>
+  <div id="objective" class="outline hidden"></div>
+  <div id="timer" class="outline hidden"></div>
+  <div id="dialogue" class="outline hidden"><span id="speaker"></span><span id="line"></span></div>
+  <div id="hint" class="hidden"></div>
+  <div id="briefing" class="hidden"><div id="brTitle"></div><div id="brGiver"></div><div id="brText"></div><div id="brReward"></div><div id="brGo">PRESS ENTER TO START</div></div>
+  <div id="banner" class="outline hidden"><div id="bannerTitle"></div><div id="bannerSub"></div></div>
+  <div id="speedo" class="outline hidden"><span id="speedVal">0</span><span id="speedUnit">KM/H</span><div id="carName"></div></div>
+</div>
+
+<div id="title" class="screen">
+  <div class="logo">SUNDOWN</div>
+  <div class="sub">PUERTO ÁMBAR</div>
+  <div class="tag">Every city has a price. This one pays in heat.</div>
+  <div class="menu">
+    <button id="btnNew">NEW GAME</button>
+    <button id="btnContinue">CONTINUE</button>
+  </div>
+  <div class="controls">
+    <b>W A S D</b><span>drive / walk</span><b>SPACE</b><span>handbrake drift</span>
+    <b>F</b><span>steal / enter / exit car</span><b>SHIFT</b><span>sprint</span>
+    <b>MOUSE</b><span>aim, click to shoot</span><b>Q</b><span>switch weapon</span>
+    <b>H</b><span>horn</span><b>ESC</b><span>pause &amp; save</span>
+  </div>
+</div>
+
+<div id="pause" class="screen hidden">
+  <div class="logo" style="font-size:96px">PAUSED</div>
+  <div class="menu" style="margin-top:20px">
+    <button id="btnResume">RESUME</button>
+    <button id="btnSave">SAVE GAME</button>
+    <button id="btnQuit">SAVE &amp; QUIT TO TITLE</button>
+  </div>
+</div>
+
+<p id="status" role="status" aria-live="polite"></p>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
