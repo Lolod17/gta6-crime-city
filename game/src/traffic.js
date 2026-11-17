@@ -253,8 +253,13 @@ function dodge(state, ped, dt) {
   if (!v || ped.diveChecked > state.time) return false;
   ped.diveChecked = state.time + 0.1;
   const sp = Math.hypot(v.vx, v.vy);
-  if (sp < 140) return false;
   const dx = ped.x - v.x, dy = ped.y - v.y;
+  // any moving car close by (mounting the kerb, nosing through a crowd) sends people running from it
+  if (sp > 50 && dx * dx + dy * dy < 120 * 120 && ped.flee <= 0) {
+    ped.flee = 2.5 + Math.random(); ped.fx = v.x; ped.fy = v.y; ped.mode = 'flee';
+    if (Math.random() < 0.3) ped.shout = 1.2;
+  }
+  if (sp < 140) return false;
   const ahead = (dx * v.vx + dy * v.vy) / sp;             // distance along the car's travel
   const side = (-dx * v.vy + dy * v.vx) / sp;             // signed distance off its line
   if (ahead > 0 && ahead < sp * 0.45 && Math.abs(side) < 30 && Math.random() < 0.8) {
@@ -271,6 +276,8 @@ function dodge(state, ped, dt) {
 function updateCivilian(state, ped, dt) {
   slide(state, ped, dt);
   if (dodge(state, ped, dt)) return;
+  // a witness on the phone (witnesses.js) stands still, facing where the shots came from
+  if (ped.calling > 0) { ped.moving = false; ped.a = Math.atan2(ped.callY - ped.y, ped.callX - ped.x); return; }
   if (ped.flee > 0) {
     ped.flee -= dt;
     const dx = ped.x - ped.fx, dy = ped.y - ped.fy;
@@ -367,8 +374,11 @@ export function updatePickups(state, dt) {
       if (it.kind === 'cash') { state.addMoney(it.amount, it.x, it.y); sfx('cash', 0.7, it.x, it.y); }
       else if (it.kind === 'health') { p.health = Math.min(100, p.health + 40); state.notify('+40 health', '#7dff8a'); sfx('cash', 0.5, it.x, it.y); }
       else if (it.kind === 'ammo') {
+        // ammo for every weapon the player owns
         p.ammo.pistol += 24;
         if (state.progress.smg) p.ammo.smg += 60;
+        if (state.progress.owned?.shotgun) p.ammo.shotgun += 8;
+        if (state.progress.owned?.carbine) p.ammo.carbine += 40;
         floatText(state, it.x, it.y - 10, '+AMMO', '#ffd36b'); sfx('reload', 0.7, it.x, it.y);
       }
       burst(state, 'cash', it.x, it.y, 1, 1);

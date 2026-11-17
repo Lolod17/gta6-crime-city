@@ -12,6 +12,8 @@ export const MODELS = {
   cabana: { name: 'Cabana Cab', colors: ['#f6c431'], len: 50, wid: 24, speed: 0.95, accel: 1, health: 1, taxi: true },
   mule: { name: 'Mule Van', colors: ['#f0efe9', '#d8d2c0', '#7a8a96'], len: 62, wid: 28, speed: 0.78, accel: 0.75, health: 1.5 },
   sol: { name: 'Sol Convertible', colors: ['#7ad3c8', '#f49ac1', '#f7f0d8', '#ff8a3c'], len: 50, wid: 24, speed: 1.02, accel: 1.08, health: 0.9, open: true },
+  cometa: { name: 'Cometa SX', colors: ['#ffd23f', '#ff3d7f', '#7ff0e0'], len: 52, wid: 23, speed: 1.22, accel: 1.45, health: 1.1 },
+  aurelia: { name: 'Castellan\'s Aurelia', colors: ['#d4af37'], len: 54, wid: 24, speed: 1.16, accel: 1.3, health: 1 },
   cruiser: { name: 'PAPD Cruiser', colors: ['#14213d'], len: 52, wid: 25, speed: 1.12, accel: 1.2, health: 1.3, police: true },
 };
 export const CIVILIAN_MODELS = ['pelican', 'pelican', 'pelican', 'cabana', 'mule', 'sol', 'marlin'];

@@ -443,6 +443,9 @@ function drawPerson(ctx, p, t) {
   ctx.fillStyle = p.hair;
   ctx.beginPath(); ctx.arc(0, 0, 4.6, Math.PI * 0.5, Math.PI * 1.5); ctx.fill();
   if (p.hat) { ctx.fillStyle = p.hat; ctx.beginPath(); ctx.arc(0, 0, 5.4, 0, Math.PI * 2); ctx.fill(); ctx.fillRect(2, -4, 5, 8); }
+  if (p.calling > 0) { ctx.fillStyle = '#9ab8ff'; ctx.fillRect(1, 4, 5, 3); }   // phone to the ear
+  if (p.vip) { ctx.strokeStyle = '#7dff8a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.stroke(); }
+  if (p.rival) { ctx.strokeStyle = '#ff3d7f'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2); ctx.stroke(); }
   ctx.restore();
 }
 

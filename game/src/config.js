@@ -71,6 +71,33 @@ export const PLAYER = {
 export const WEAPONS = {
   pistol: { name: 'Pistol', rate: 0.28, damage: 26, spread: 0.035, speed: 1500, range: 620, ammo: 120, auto: false },
   smg: { name: 'SMG', rate: 0.085, damage: 15, spread: 0.08, speed: 1600, range: 560, ammo: 400, auto: true },
+  // bought at Punta Arms (shop.js): the two better weapons
+  shotgun: { name: 'Shotgun', rate: 0.75, damage: 16, spread: 0.16, speed: 1400, range: 380, ammo: 60, auto: false, pellets: 7 },
+  carbine: { name: 'Carbine', rate: 0.11, damage: 30, spread: 0.025, speed: 1900, range: 760, ammo: 300, auto: true },
+};
+/** Weapon order for Q / number keys: 1 pistol, 2 SMG, 3 shotgun, 4 carbine. */
+export const WEAPON_ORDER = ['pistol', 'smg', 'shotgun', 'carbine'];
+
+/** Punta Arms and the safehouse garage: everything costs cash, nothing is free. */
+export const SHOP = {
+  armor: { name: 'Armour vest', price: 800, key: 'Digit1' },       // refills armour to 100, rebuyable
+  shotgun: { name: 'Shotgun', price: 2500, key: 'Digit2' },
+  carbine: { name: 'Carbine', price: 6000, key: 'Digit3' },
+  cometa: { name: 'Cometa SX', price: 9000, key: 'Digit4' },        // waits at the safehouse on every visit
+  ammoRefill: 0.5,       // owned weapons are topped up to this fraction of a full load when bought
+};
+
+/** Mission and activity tunables. */
+export const JOBS = {
+  vipHealth: 120,        // the protection client
+  rivalHealth: 160,      // Teo Castellan on foot at the docks
+  tailNear: 150,         // closer than this with line of sight and the tail target grows suspicious
+  tailFar: 620,          // further than this and he is lost
+  tailSuspicion: 34,     // suspicion per second while too close (100 fails)
+  rivalSpeed: 0.97,      // rival race driver top speed, fraction of his car's
+  intactShare: 0.6,      // a delivered car must keep this much health
+  fragileShare: 0.5,     // the glassware van
+  witnessCall: 2.4,      // seconds a witness spends on the phone before the PAPD hears
 };
 
 export const TRAFFIC = {

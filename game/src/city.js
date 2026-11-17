@@ -264,7 +264,7 @@ export function nearestNode(x, y) {
 }
 
 /** A point on the sidewalk of block (bi, bj), mid-way along one side: used for named places. */
-function kerbPoint(bi, bj, side) {
+export function kerbPoint(bi, bj, side) {
   const x0 = blockStart(bi), y0 = blockStart(bj), mid = BLOCK_SIZE / 2, k = WORLD.sidewalk / 2;
   if (side === 'n') return { x: x0 + mid, y: y0 + k, side };
   if (side === 's') return { x: x0 + mid, y: y0 + BLOCK_SIZE - k, side };
@@ -341,6 +341,9 @@ export function buildCity(seed = WORLD.seed) {
   label(2, 3, 'HOSPITAL', '#f4f4f4');
   label(5, 7, 'TAQUERIA INÉS', '#d9572b');
   label(0, 8, 'PAINT & PRAY', '#6b3fa0');
+  label(4, 1, 'BAR CARACOL', '#2b8f7a');
+  label(2, 5, 'PUNTA ARMS', '#8f2b2b');
+  label(7, 5, 'MUELLE CINCO', '#3f5f6f');
   city.places = {
     safehouse: kerbPoint(1, 2, 'e'),
     station: kerbPoint(6, 8, 'n'),
@@ -351,6 +354,23 @@ export function buildCity(seed = WORLD.seed) {
     heatStart: kerbPoint(3, 8, 's'),
     garage: kerbPoint(0, 8, 'n'),       // Paint & Pray resprays clear the heat
     rival: { x: blockStart(6) + BLOCK_SIZE / 2, y: blockStart(3) + BLOCK_SIZE / 2 },
+    // pass 2: the three-day story and the side activities
+    caracol: kerbPoint(4, 1, 's'),      // Nando's bar
+    hotel: kerbPoint(4, 4, 'n'),        // downtown hotel: the glassware delivery
+    tailStart: kerbPoint(3, 0, 's'),
+    parcels: [kerbPoint(1, 0, 's'), kerbPoint(6, 5, 'w'), kerbPoint(2, 9, 'n')],
+    raceStart: { x: roadCenter(1), y: roadCenter(1) + 90 },
+    clinic: kerbPoint(5, 2, 'w'),
+    dashStart: kerbPoint(6, 6, 'w'),    // the Day 1 dash to the safehouse begins out east       // where Nando waits to be protected
+    aurelia: kerbPoint(3, 5, 'e'),      // Teo's gold car, parked downtown
+    docks: kerbPoint(7, 5, 'w'),        // Muelle Cinco
+    containers: kerbPoint(7, 8, 'w'),   // the car drop at the container lot
+    broker: kerbPoint(7, 2, 'w'),       // the harbour broker who buys the ledger
+    shop: kerbPoint(2, 5, 'e'),         // Punta Arms
+    sprint: { x: roadCenter(0) + WORLD.lane, y: roadCenter(1) + 60 },   // activity: checkpoint race
+    depot: kerbPoint(5, 4, 's'),        // activity: delivery job
+    rampage: kerbPoint(6, 9, 'n'),      // activity: rampage
+    addresses: [kerbPoint(0, 2, 'e'), kerbPoint(3, 7, 'n'), kerbPoint(6, 0, 's'), kerbPoint(1, 8, 'e'), kerbPoint(4, 9, 'n')],
     start: { x: roadCenter(2) + WORLD.lane, y: blockStart(2) + 120 },
   };
   // the rival crew's block is a walled lot, not a tower: clear its middle

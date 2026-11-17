@@ -67,6 +67,15 @@ export function setWanted(state, level, min = 0, max = POLICE.maxStars) {
   w.peak = Math.max(w.peak, w.level);
 }
 
+/** Take one star off (a courier run keeps the player low-key). */
+export function lowerWanted(state) {
+  const w = state.wanted;
+  if (w.level <= 1) { if (w.level === 1) clearWanted(state); return; }
+  w.level -= 1;
+  w.heat = POLICE.starHeat[w.level] + 10;
+  w.evade = 0;
+}
+
 export function clearWanted(state) {
   const w = state.wanted;
   w.heat = 0; w.level = 0; w.evade = 0; w.min = 0; w.max = POLICE.maxStars; w.seen = false;

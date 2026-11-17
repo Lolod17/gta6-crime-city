@@ -1,5 +1,5 @@
 // SUNDOWN: Puerto Ámbar — boot, the fixed-step loop, input, and the state machine
-// (title -> play <-> pause, play -> dead -> play, play -> mission briefing -> play).
+// (title -> play <-> pause, play -> dead -> play, play -> job briefing -> play, play -> shop -> play).
 // Every module reads and writes the one shared `state` object built here.
 import { STEP, SLOW_FRAME_MS, WORLD, PLAYER, POLICE } from './config.js';
 import { buildCity, makeRng, isBlocked } from './city.js';
@@ -9,7 +9,12 @@ import { createPlayer, updatePlayer, updateBullets, carHitsPeople } from './play
 import { createVehicle, updateVehicle, collideVehicles } from './vehicle.js';
 import { initTraffic, updateTraffic, hurtPed, ejectDriver, scarePeople, updatePickups, populate } from './traffic.js';
 import { createWanted, createHeli, updatePolice, reportCrime, clearWanted, onEjectCop } from './police.js';
-import { initMissions, updateMissions, failMission } from './missions.js';
+import { initJobs, updateJobs, failMission } from './jobs.js';
+import { defineMissions } from './missions.js';
+import { defineActivities } from './activities.js';
+import { beginDay } from './story.js';
+import { updateShop, restoreOwned } from './shop.js';
+import { witnessShot, updateWitnesses } from './witnesses.js';
 import { initHud, updateHud, pushNotice } from './hud.js';
 import { initAudio, sfx, updateAudio } from './audio.js';
 import { hasSave, saveGame, loadGame } from './persist.js';
@@ -29,7 +34,7 @@ function createState() {
     vehicles: [], peds: [], bullets: [], pickups: [], fx: createFx(),
     wanted: createWanted(), heli: createHeli(),
     money: 250, stats: { kills: 0, carsStolen: 0, carsWrecked: 0, crashes: 0, shots: 0, escapes: 0, deaths: 0, busts: 0 },
-    progress: { mission: 0, smg: false },
+    progress: { day: 1, done: [], smg: false, owned: {}, ending: null, bests: {} },
     input: { keys: new Set(), pressed: new Set(), mouse: { x: 0, y: 0, wx: 0, wy: 0, down: false, clicked: false, active: false } },
     dialogue: null, banner: null, hint: '', missionView: null, flash: 0, deadTimer: 0, timeScale: 1,
     mission: null,
@@ -41,10 +46,7 @@ function createState() {
   s.onEject = (ped) => onEjectCop(s, ped);
   s.gunfire = (x, y, owner) => {
     scarePeople(s, x, y, 380);
-    if (owner === 'player') {
-      const witnesses = s.peds.some((p) => !p.dead && p.kind !== 'gang' && Math.abs(p.x - x) < 500 && Math.abs(p.y - y) < 500);
-      if (witnesses || s.wanted.level > 0) s.crime('gunfire', x, y);
-    }
+    if (owner === 'player') witnessShot(s, x, y);   // bystanders who saw it phone the PAPD
   };
   s.addMoney = (amount, x, y) => {
     s.money += amount;
@@ -120,21 +122,23 @@ function showTitle() {
 function startGame(fromSave) {
   initAudio();
   ui.title.classList.add('hidden');
-  const save = fromSave ? loadGame() : null;
+  initJobs(state, defineMissions(city), defineActivities(city));
+  const save = fromSave ? loadGame(state.missionDefs.map((d) => d.id)) : null;
   if (save) {
     state.money = save.money;
-    state.progress = { ...state.progress, ...save.progress };
+    state.progress = { ...state.progress, ...save.progress, day: save.day, done: save.done };
     state.stats = { ...state.stats, ...save.stats };
     if (state.progress.smg) state.player.ammo.smg = Math.max(state.player.ammo.smg, 120);
+    restoreOwned(state);
   }
   state.mode = 'play';
-  spawnPlayer(city.places.safehouse, true, 'marlin');
+  spawnPlayer(city.places.safehouse, true, state.progress.owned.cometa ? 'cometa' : 'marlin');
   if (save && save.wanted > 0) {
     state.wanted.heat = POLICE.starHeat[save.wanted] + 20;
     state.wanted.level = save.wanted;
   }
   populate(state);
-  initMissions(state);
+  beginDay(state);
   state.notify(save ? 'Welcome back to Puerto Ámbar' : 'Puerto Ámbar. 6:40 pm.', '#ffcf5a');
   sfx('start', 0.8);
 }
@@ -163,6 +167,7 @@ function spawnPlayer(place, withCar, model = 'pelican') {
       if (!isBlocked(city, p.x + dx, p.y + dy, 26)) { cx = p.x + dx; cy = p.y + dy; break; }
     }
     const v = createVehicle(model, cx, cy, Math.abs(cy - p.y) > Math.abs(cx - p.x) ? 0 : -Math.PI / 2, state.rng);
+    if (model === 'cometa') v.owned = true;
     state.vehicles.push(v);
   }
   placeCamera(state.camera, p.x, p.y);
@@ -219,10 +224,12 @@ function stepWorld(dt) {
     state.player.x = 2200 + Math.cos(t) * 1100;
     state.player.y = 2100 + Math.sin(t * 1.3) * 1200;
     state.player.vx = -Math.sin(t) * 120; state.player.vy = Math.cos(t * 1.3) * 140;
-  } else if (state.mode === 'play' || state.mode === 'dead' || state.mode === 'mission') {
+  } else if (state.mode === 'play' || state.mode === 'dead' || state.mode === 'mission' || state.mode === 'shop') {
     if (state.mode === 'play') updatePlayer(state, dt);
     updatePolice(state, dt);
-    updateMissions(state, dt);
+    updateJobs(state, dt);
+    updateShop(state);
+    updateWitnesses(state, dt);
   }
   if (state.mode !== 'pause') {
     updateTraffic(state, dt);
@@ -282,9 +289,10 @@ function frame(now) {
 }
 
 function hintFor() {
-  if (state.mode !== 'play' && state.mode !== 'mission') return '';
+  if (state.mode !== 'play' && state.mode !== 'mission' && state.mode !== 'shop') return '';
   const p = state.player;
   if (state.briefing) return 'ENTER — take the job    BACKSPACE — not now';
+  if (state.mode === 'shop') return '1–4 — buy    BACKSPACE — leave the counter';
   if (state.missionHint) return state.missionHint;
   if (p.car) return '';
   for (const v of state.vehicles) {

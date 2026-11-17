@@ -1,6 +1,6 @@
 // The player: on-foot movement (walk/sprint), mouse aim, shooting, entering, stealing and leaving
 // cars, and driving with the keyboard. Bullets from anyone are stepped here as well.
-import { PLAYER, CAR, WEAPONS } from './config.js';
+import { PLAYER, CAR, WEAPONS, WEAPON_ORDER } from './config.js';
 import { solidsNear, segmentEnterRect, isBlocked } from './city.js';
 import { forwardSpeed, damageVehicle } from './vehicle.js';
 import { burst, addShake, addDecal } from './render.js';
@@ -10,7 +10,7 @@ export function createPlayer(x, y) {
   return {
     type: 'player', x, y, a: -Math.PI / 2, vx: 0, vy: 0, r: PLAYER.radius,
     health: PLAYER.health, armor: PLAYER.armor, car: null,
-    weapon: 'pistol', ammo: { pistol: WEAPONS.pistol.ammo, smg: 0 },
+    weapon: 'pistol', ammo: { pistol: WEAPONS.pistol.ammo, smg: 0, shotgun: 0, carbine: 0 },
     cooldown: 0, walk: 0, moving: false, invuln: 0, bust: 0, lastHurt: -9,
     shirt: '#ff4f8b', pants: '#1f3b57', skin: '#c98e62', hair: '#1b1410', hat: null, armed: true,
   };
@@ -28,7 +28,7 @@ export function updatePlayer(state, dt) {
   if (input.pressed.has('KeyF') || input.pressed.has('Enter')) {
     if (p.car) exitVehicle(state); else tryEnterVehicle(state);
   }
-  if (input.pressed.has('KeyQ') || input.pressed.has('Digit1') || input.pressed.has('Digit2')) cycleWeapon(p, input.pressed);
+  if (input.pressed.has('KeyQ') || WEAPON_ORDER.some((_, i) => input.pressed.has(`Digit${i + 1}`))) cycleWeapon(p, input.pressed);
 
   // aim follows the mouse in world space
   const aimA = Math.atan2(input.mouse.wy - p.y, input.mouse.wx - p.x);
@@ -67,10 +67,15 @@ export function updatePlayer(state, dt) {
 }
 
 function cycleWeapon(p, pressed) {
-  if (pressed.has('Digit1')) { p.weapon = 'pistol'; return; }
-  if (pressed.has('Digit2')) { if (p.ammo.smg > 0) p.weapon = 'smg'; return; }
-  const next = p.weapon === 'pistol' ? 'smg' : 'pistol';
-  if (p.ammo[next] > 0) p.weapon = next;
+  // number keys pick a weapon directly; Q steps to the next one that has ammo
+  for (let i = 0; i < WEAPON_ORDER.length; i += 1) {
+    if (pressed.has(`Digit${i + 1}`)) { if (p.ammo[WEAPON_ORDER[i]] > 0) p.weapon = WEAPON_ORDER[i]; return; }
+  }
+  const at = WEAPON_ORDER.indexOf(p.weapon);
+  for (let k = 1; k <= WEAPON_ORDER.length; k += 1) {
+    const next = WEAPON_ORDER[(at + k) % WEAPON_ORDER.length];
+    if (p.ammo[next] > 0) { p.weapon = next; return; }
+  }
 }
 
 /** Walk a circle through the city, sliding along building faces. */
@@ -86,19 +91,22 @@ export function fireWeapon(state, shooter, angle, fromCar) {
   const p = shooter;
   const w = WEAPONS[p.weapon];
   if (p.ammo[p.weapon] <= 0) {
-    if (p.weapon !== 'pistol') { p.weapon = 'pistol'; state.notify('Out of SMG ammo', '#ffd36b'); }
+    if (p.weapon !== 'pistol') { state.notify(`Out of ${w.name} ammo`, '#ffd36b'); p.weapon = 'pistol'; }
     else { p.cooldown = 0.3; sfx('click', 0.5, p.x, p.y); }
     return;
   }
   p.ammo[p.weapon] -= 1;
   p.cooldown = w.rate;
-  const a = angle + (Math.random() - 0.5) * w.spread * 2;
   const ox = fromCar ? fromCar.x + Math.cos(angle) * (fromCar.wid * 0.7) : p.x + Math.cos(angle) * 16;
   const oy = fromCar ? fromCar.y + Math.sin(angle) * (fromCar.wid * 0.7) : p.y + Math.sin(angle) * 16;
-  spawnBullet(state, ox, oy, a, w.speed, w.damage, w.range, 'player', fromCar || p);
-  burst(state, 'muzzle', ox, oy, 1, 1);
-  addShake(state, 0.18);
-  sfx(p.weapon === 'smg' ? 'smg' : 'gunshot', 0.9, ox, oy);
+  // a shotgun throws several pellets per shell
+  for (let k = 0; k < (w.pellets || 1); k += 1) {
+    const a = angle + (Math.random() - 0.5) * w.spread * 2;
+    spawnBullet(state, ox, oy, a, w.speed * (0.9 + Math.random() * 0.2), w.damage, w.range, 'player', fromCar || p);
+  }
+  burst(state, 'muzzle', ox, oy, 1, w.pellets ? 1.6 : 1);
+  addShake(state, w.pellets ? 0.45 : 0.18);
+  sfx(w.auto ? 'smg' : 'gunshot', w.pellets ? 1 : 0.9, ox, oy);
   state.stats.shots += 1;
   state.gunfire(ox, oy, 'player');
 }
