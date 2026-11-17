@@ -154,6 +154,19 @@ export const HUD = {
   noticeTime: 1.5,       // anything costing money or health announces itself this long
   minimapSize: 210,
   minimapScale: 0.075,   // minimap px per world px
+  bannerTime: 4,         // seconds a district banner stays up on entry
+};
+
+/** The in-game clock: 1 real second = clockMinutes of game time; a day starts at 18:00. */
+export const CLOCK = {
+  startMinute: 18 * 60,  // 18:24 once the opening seconds have run (see main.js)
+  minutePerSecond: 2,    // one real second advances the clock by two game minutes
+  dayLength: 24,         // hours on the dial
+};
+
+/** Radio: station and track line; a new track every 30 s of play. The mute key is M. */
+export const RADIO = {
+  trackSeconds: 30,
 };
 
 export const AUDIO = {

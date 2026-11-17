@@ -1,7 +1,7 @@
 // SUNDOWN: Puerto Ámbar — boot, the fixed-step loop, input, and the state machine
 // (title -> play <-> pause, play -> dead -> play, play -> job briefing -> play, play -> shop -> play).
 // Every module reads and writes the one shared `state` object built here.
-import { STEP, SLOW_FRAME_MS, WORLD, PLAYER, POLICE } from './config.js';
+import { STEP, SLOW_FRAME_MS, WORLD, PLAYER, POLICE, CLOCK } from './config.js';
 import { buildCity, makeRng, isBlocked } from './city.js';
 import { createRenderer, resizeRenderer, renderFrame, createFx, updateEffects, floatText, warmGround, burst } from './render.js';
 import { createCamera, updateCamera, placeCamera, toWorld } from './camera.js';
@@ -13,6 +13,8 @@ import { initJobs, updateJobs, failMission } from './jobs.js';
 import { defineMissions } from './missions.js';
 import { defineActivities } from './activities.js';
 import { beginDay } from './story.js';
+import { updateDistricts, resetDistricts } from './districts.js';
+import { createRadio, updateRadio, toggleMute } from './radio.js';
 import { updateShop, restoreOwned } from './shop.js';
 import { witnessShot, updateWitnesses } from './witnesses.js';
 import { initHud, updateHud, pushNotice } from './hud.js';
@@ -38,6 +40,7 @@ function createState() {
     input: { keys: new Set(), pressed: new Set(), mouse: { x: 0, y: 0, wx: 0, wy: 0, down: false, clicked: false, active: false } },
     dialogue: null, banner: null, hint: '', missionView: null, flash: 0, deadTimer: 0, timeScale: 1,
     mission: null,
+    loc: { id: null }, locationBanner: null, dayMinute: CLOCK.startMinute + 24, radio: createRadio(),
   };
   s.notify = (text, color) => pushNotice(s, text, color);
   s.crime = (kind, x, y) => { if (s.mode === 'play' && !(kind === 'gunfire' && s.noGunHeat)) reportCrime(s, kind, x, y); };

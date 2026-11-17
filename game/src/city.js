@@ -49,6 +49,24 @@ function district(bi, bj) {
   return 'residential';
 }
 
+/** The nine named districts, as a table of block columns per block row (see districts.js). */
+const ZONE_ROWS = [
+  ['palmlines', 'bahia', 'marina'],
+  ['southside', 'downtown', 'palmlines', 'bahia', 'marina'],
+  ['southside', 'centro', 'eastside', 'palmas', 'bahia', 'marina'],
+  ['centro', 'eastside', 'palmas', 'palmlines', 'bahia', 'marina'],
+  ['centro', 'downtown', 'palmas', 'palmlines', 'bahia', 'marina'],
+  ['caracol', 'centro', 'downtown', 'eastside', 'bahia', 'marina'],
+];
+
+/** Named district for a world point: block row picks the row, block column picks within it. */
+export function worldToZone(city, x, y) {
+  const bi = Math.max(0, Math.min(BLOCKS_X - 1, Math.floor(x / (P * T)) - 1));
+  const bj = Math.max(0, Math.min(BLOCKS_Y - 1, Math.floor(y / (P * T)) - 1));
+  const row = ZONE_ROWS[Math.min(ZONE_ROWS.length - 1, Math.floor(bj / 2))];
+  return row[Math.max(0, Math.min(row.length - 1, Math.floor(bi * row.length / BLOCKS_X)))];
+}
+
 function addBuilding(city, rng, x, y, w, h, height, kind, extra = {}) {
   const b = {
     x, y, w, h, height, kind,

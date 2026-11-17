@@ -83,12 +83,12 @@ export function defineMissions(city) {
       id: 'collection', day: 1, title: 'COLLECTION', giver: 'INES', start: P.taqueria, reward: 1500,
       briefing: 'Lift Inés\'s crate from the marina warehouse before the harbour patrol sweeps it, then deliver it to the west-side laundromat.',
       dialogue: [
-        ['INES', 'Rio. You still drive like your father?'],
+        ['INES', 'Rio. Still driving like your father?'],
         ['RIO', 'Worse. What\'s the job?'],
-        ['INES', 'A crate at the marina warehouse. Nobody watches it for the next ninety seconds.'],
-        ['INES', 'Bring it to the laundromat on the west side. Don\'t stop for lights.'],
+        ['INES', 'A crate at the marina.'],
+        ['INES', 'Ninety seconds. Don\'t stop for lights.'],
       ],
-      outro: ['INES', 'Clean. That\'s your cut. Nando at Bar Caracol has work too.'],
+      outro: ['INES', 'Clean. Your cut. Nando has work.'],
       stages: [
         {
           objective: 'Get to the marina warehouse', timer: 90,
@@ -101,7 +101,7 @@ export function defineMissions(city) {
           enter(state) {
             state.notify('Crate loaded', Y); sfx('pickup', 0.8);
             setWanted(state, 1);
-            say(state, 'RADIO', 'Harbour patrol: someone just hit the marina. Units respond.');
+            say(state, 'RADIO', 'Marina hit. Units respond.');
           },
           update(state) { if (near(state.player, P.drop, 55)) return 'next'; },
         },
@@ -111,11 +111,12 @@ export function defineMissions(city) {
       id: 'fragile', day: 1, title: 'FRAGILE', giver: 'NANDO', start: P.caracol, reward: 900,
       briefing: 'Drive a van of Nando\'s hand-blown glassware through rush-hour traffic to the Hotel Miramar downtown. Every bump costs; half the cargo broken and the client walks.',
       dialogue: [
-        ['NANDO', 'You\'re Inés\'s new driver. Can you drive slow?'],
-        ['RIO', 'Never tried.'],
-        ['NANDO', 'Two hundred glasses for the Hotel Miramar. Their bar, my reputation.'],
+        ['NANDO', 'You\'re Inés\'s new driver, sí?'],
+        ['RIO', 'Never tried driving slow.'],
+        ['NANDO', 'Two hundred glasses. Hotel Miramar.'],
+        ['NANDO', 'Their bar, my reputation.'],
       ],
-      outro: ['NANDO', 'The Miramar counted every glass. Come by the bar — I hear things.'],
+      outro: ['NANDO', 'Every glass counted. Come by the bar.'],
       stages: [
         {
           objective: 'Get in the Mule Van behind Bar Caracol',
@@ -129,7 +130,7 @@ export function defineMissions(city) {
         {
           objective: 'Deliver the glassware to the Hotel Miramar', timer: 100,
           marker: () => markerAt(P.hotel, Y, 'HOTEL MIRAMAR'),
-          enter(state) { say(state, 'NANDO', 'Gently, Rio. Glass remembers every pothole.'); },
+          enter(state) { say(state, 'NANDO', 'Gently, Rio. Glass remembers potholes.'); },
           update(state, m) {
             const v = m.van;
             if (v.dead || v.health < v.maxHealth * JOBS.fragileShare) return '!The glassware is smashed.';
@@ -143,11 +144,12 @@ export function defineMissions(city) {
       id: 'tail', day: 1, title: 'THE TAIL', giver: 'DARIO', start: P.tailStart, reward: 1200,
       briefing: 'Dario wants to know who the harbour accountant meets. Follow his white Sol Convertible through town for a minute. Too close and he sees you; too far and he is gone.',
       dialogue: [
-        ['DARIO', 'So you\'re the driver. I\'m Dario. I pay for patience.'],
-        ['DARIO', 'The accountant drives a white Sol. Follow him. Don\'t let him see your face.'],
-        ['RIO', 'Close enough to see, far enough to vanish. Got it.'],
+        ['DARIO', 'I\'m Dario. I pay for patience.'],
+        ['DARIO', 'The accountant drives a white Sol.'],
+        ['DARIO', 'Follow him. Don\'t let him see.'],
+        ['RIO', 'Close to see, far to vanish.'],
       ],
-      outro: ['DARIO', 'He met Glasshand people at the marina. Teo Castellan is buying the harbour.'],
+      outro: ['DARIO', 'He met the Glasshands. Teo\'s buying the harbour.'],
       stages: [
         getACar('Get in a car for the tail'),
         {
@@ -155,7 +157,7 @@ export function defineMissions(city) {
           enter(state, m) {
             m.target = spawnRoadCar(state, m, 'sol', '#f7f0d8', 175);
             m.sus = 0; m.grace = 4;
-            say(state, 'DARIO', 'There — the white Sol. Stay on him.');
+            say(state, 'DARIO', 'There — the white Sol.');
           },
           marker: (state, m) => markerAt(m.target, RED, 'TARGET', 30),
           update(state, m, dt) {
@@ -178,10 +180,11 @@ export function defineMissions(city) {
       id: 'dash', day: 1, title: 'THE DASH', giver: 'INES', start: P.dashStart, reward: 1500,
       briefing: 'Someone tipped the PAPD about Inés\'s money run. Grab the bag and race it to the safehouse before the clock runs out, with two stars on your tail the whole way.',
       dialogue: [
-        ['INES', 'Rio, the bag is hot. Somebody talked.'],
-        ['INES', 'Safehouse, now. The garage door closes behind you and they lose you.'],
+        ['INES', 'Rio, the bag is hot.'],
+        ['INES', 'Somebody talked. Two stars behind.'],
+        ['INES', 'Safehouse, now. Garage closes behind you.'],
       ],
-      outro: ['INES', 'Bag\'s safe. Tomorrow you meet the crew. Sleep with your shoes on.'],
+      outro: ['INES', 'Bag\'s safe. Tomorrow, the crew.'],
       stages: [
         getACar('Get in a car — the PAPD is coming'),
         {
@@ -190,7 +193,7 @@ export function defineMissions(city) {
           marker: () => markerAt(P.safehouse, '#7fd0ff', 'SAFEHOUSE', 50),
           enter(state) {
             setWanted(state, 2, 2, 5);
-            say(state, 'RADIO', 'All units: suspect vehicle leaving the east side. Two-star pursuit.');
+            say(state, 'RADIO', 'Suspect east. Two-star pursuit.');
           },
           update(state) {
             if (near(state.player, P.safehouse, 70)) { clearWanted(state); state.notify('Garage door down — the PAPD lost you', '#7fd0ff'); return 'next'; }
@@ -204,11 +207,11 @@ export function defineMissions(city) {
       id: 'drops', day: 2, title: 'THREE DROPS', giver: 'INES', start: P.taqueria, reward: 2000,
       briefing: 'Three packages wait in three corners of the city. The PAPD already knows your car: collect them all under a wanted star and bring them to the taqueria.',
       dialogue: [
-        ['INES', 'Three packages, three corners of town. The cops are watching every one.'],
+        ['INES', 'Three packages, three corners.'],
         ['RIO', 'So I go fast.'],
-        ['INES', 'You go fast and you come back. In that order.'],
+        ['INES', 'Fast and back. In that order.'],
       ],
-      outro: ['INES', 'All three. You\'re crew now, Rio. Dario has something loud for you.'],
+      outro: ['INES', 'All three. You\'re crew now.'],
       stages: [
         getACar(),
         {
@@ -235,7 +238,7 @@ export function defineMissions(city) {
         {
           objective: 'Bring the packages to the taqueria', timer: 90,
           marker: () => markerAt(P.taqueria, Y, 'TAQUERÍA'),
-          enter(state) { say(state, 'INES', 'That\'s all three. Get here — and don\'t bring the PAPD inside.'); },
+          enter(state) { say(state, 'INES', 'All three. Don\'t bring the PAPD.'); },
           update(state) { if (near(state.player, P.taqueria, 60)) return 'next'; },
         },
       ],
@@ -244,11 +247,11 @@ export function defineMissions(city) {
       id: 'race', day: 2, title: 'STREET RACE', giver: 'DARIO', start: P.raceStart, reward: 2500,
       briefing: 'Teo Castellan, boss of the Glasshands, races for respect. Seven checkpoints through downtown and the marina in a Marlin GT. Beat him to the last one.',
       dialogue: [
-        ['DARIO', 'Teo Castellan races every Friday. Today you embarrass him.'],
-        ['TEO', 'Ocampo\'s little driver. Try to keep my tail lights in sight.'],
+        ['DARIO', 'Teo races every Friday.'],
+        ['TEO', 'Ocampo\'s driver. Keep up, little man.'],
         ['RIO', 'Try to keep your mirrors on.'],
       ],
-      outro: ['TEO', 'Enjoy it, Rio. Next time it won\'t be a race.'],
+      outro: ['TEO', 'Enjoy it. Next time, no race.'],
       tick(state, m, dt) { if (m.rival) updateRival(state, m.rival, dt); },
       stages: [
         {
@@ -296,10 +299,10 @@ export function defineMissions(city) {
       id: 'protect', day: 2, title: 'PROTECTION', giver: 'NANDO', start: P.clinic, reward: 2500,
       briefing: 'Somebody put a price on Nando Reyes. He is waiting outside the clinic. Keep him alive through two Glasshand hit squads, then drive him to the safehouse.',
       dialogue: [
-        ['NANDO', 'Rio! They paid the Glasshands to shut me up. I can see them coming.'],
+        ['NANDO', 'They paid to shut me up!'],
         ['RIO', 'Stay behind me. Don\'t run.'],
       ],
-      outro: ['NANDO', 'I owe you my neck. Here\'s something for free: Dario talks to Teo.'],
+      outro: ['NANDO', 'I owe you my neck. Dario talks to Teo.'],
       stages: [
         {
           objective: 'Protect Nando from the hit squad',
@@ -310,7 +313,7 @@ export function defineMissions(city) {
             state.peds.push(v);
             m.vip = v; m.targets.push(v);
             m.crew.push(...spawnCrew(state, P.clinic.x, P.clinic.y, ring(3, 420, 0.4), { awake: true }));
-            say(state, 'GANG', 'There\'s the barman! Nobody leaves!');
+            say(state, 'GANG', 'The barman! Nobody leaves!');
           },
           marker: (state, m) => markerAt(m.vip, GREEN, 'NANDO', 22),
           update(state, m) {
@@ -323,7 +326,7 @@ export function defineMissions(city) {
           objective: 'A second squad — protect Nando',
           enter(state, m) {
             m.crew.push(...spawnCrew(state, P.clinic.x, P.clinic.y, ring(4, 460, 2.1), { awake: true }));
-            say(state, 'NANDO', 'More of them, from the other side!');
+            say(state, 'NANDO', 'More of them, other side!');
           },
           marker: (state, m) => markerAt(m.vip, GREEN, 'NANDO', 22),
           update(state, m) {
@@ -334,7 +337,7 @@ export function defineMissions(city) {
         },
         {
           objective: 'Pick Nando up in a car',
-          enter(state, m) { if (!state.player.car) m.spare = spawnCar(state, m, m.vip, 'pelican', 60, 0); say(state, 'NANDO', 'Get a car. I\'m not walking to the safehouse.'); },
+          enter(state, m) { if (!state.player.car) m.spare = spawnCar(state, m, m.vip, 'pelican', 60, 0); say(state, 'NANDO', 'Get a car. I\'m not walking.'); },
           marker: (state, m) => markerAt(m.vip, GREEN, 'NANDO', 30),
           update(state, m) {
             if (m.vip.dead) return '!Nando is dead.';
@@ -362,12 +365,12 @@ export function defineMissions(city) {
       id: 'score', day: 2, title: 'THE WAREHOUSE', giver: 'INES', start: P.taqueria, reward: 4000,
       briefing: 'The Glasshand crew holds Inés\'s warehouse yard off Harbour Avenue and her money with it. Clear the yard, take the stash, escape the response.',
       dialogue: [
-        ['INES', 'The Glasshands took my warehouse and my money. Both come back today.'],
+        ['INES', 'They took warehouse and money.'],
         ['RIO', 'How many of them?'],
-        ['INES', 'Six, maybe eight. Take this — it spits.'],
-        ['INES', 'When the shooting stops, the whole PAPD comes. Don\'t be there.'],
+        ['INES', 'Six, maybe eight. Take this.'],
+        ['INES', 'When shooting stops, the PAPD comes.'],
       ],
-      outro: ['INES', 'My money, my yard. Tomorrow we take the harbour from Teo.'],
+      outro: ['INES', 'My money. Tomorrow, the harbour.'],
       stages: [
         {
           objective: 'Go to the Glasshand warehouse',
@@ -390,7 +393,7 @@ export function defineMissions(city) {
             car.color = '#1c1c22'; car.mission = true;
             state.vehicles.push(car); m.entities.push(car);
             state.noGunHeat = true;
-            say(state, 'GANG', 'That\'s Ocampo\'s driver! Light him up!');
+            say(state, 'GANG', 'Ocampo\'s driver! Light him up!');
           },
           update(state, m) {
             const left = alive(m.crew);
@@ -401,7 +404,7 @@ export function defineMissions(city) {
         {
           objective: 'Grab the stash',
           marker: () => markerAt(P.rival, GREEN, 'STASH', 36),
-          enter(state) { state.noGunHeat = false; say(state, 'RIO', 'That\'s all of them. Where\'s the money...'); },
+          enter(state) { state.noGunHeat = false; say(state, 'RIO', 'That\'s all. Where\'s the money?'); },
           update(state) {
             if (near(state.player, P.rival, 40)) {
               state.addMoney(1200, P.rival.x, P.rival.y);
@@ -412,7 +415,7 @@ export function defineMissions(city) {
         },
         {
           objective: 'Escape the police',
-          enter(state) { setWanted(state, 3); say(state, 'RADIO', 'All units, shots fired off Harbour Avenue. Every car in the district, respond.'); },
+          enter(state) { setWanted(state, 3); say(state, 'RADIO', 'Shots off Harbour Avenue. All units.'); },
           update(state) { if (state.wanted.level === 0) return 'next'; },
         },
       ],
@@ -423,10 +426,10 @@ export function defineMissions(city) {
       id: 'aurelia', day: 3, title: 'THE AURELIA', giver: 'DARIO', start: P.caracol, reward: 3000,
       briefing: 'Teo Castellan\'s gold Aurelia sits outside his downtown office. Steal it and deliver it to the container lot at the marina with at least 60% of its bodywork — a buyer is waiting.',
       dialogue: [
-        ['DARIO', 'Teo loves exactly one thing: a gold Aurelia. We\'re selling it back to the harbour.'],
+        ['DARIO', 'Teo loves one thing: the Aurelia.'],
         ['DARIO', 'A scratch costs us. A dent costs you.'],
       ],
-      outro: ['DARIO', 'The buyer cried a little. Good car. Now the real job.'],
+      outro: ['DARIO', 'Good car. Now the real job.'],
       stages: [
         {
           objective: 'Steal Castellan\'s Aurelia downtown',
@@ -446,7 +449,7 @@ export function defineMissions(city) {
           marker: () => markerAt(P.containers, Y, 'CONTAINER LOT', 50),
           enter(state) {
             setWanted(state, 1);
-            say(state, 'TEO', 'Somebody\'s in my car? Somebody is dead tonight.');
+            say(state, 'TEO', 'Somebody\'s in my car? Dead.');
           },
           update(state, m) {
             const v = m.car;
@@ -461,11 +464,11 @@ export function defineMissions(city) {
       id: 'heat', day: 3, title: 'HEAT', giver: 'DARIO', start: P.heatStart, reward: 3500,
       briefing: 'Pull four stars of the PAPD onto you for forty seconds while Dario\'s people lift the harbour ledger from the evidence lot, then lose them with a respray at Paint & Pray.',
       dialogue: [
-        ['DARIO', 'The ledger is in the PAPD evidence lot. I need every cruiser looking at you.'],
+        ['DARIO', 'I need every cruiser on you.'],
         ['RIO', 'How many cruisers?'],
-        ['DARIO', 'All of them. Forty seconds. Then Paint & Pray makes you disappear.'],
+        ['DARIO', 'All of them. Forty seconds. Paint & Pray.'],
       ],
-      outro: ['DARIO', 'We have the ledger. Meet me at Muelle Cinco tonight for your share.'],
+      outro: ['DARIO', 'We have the ledger. Muelle Cinco.'],
       stages: [
         getACar(),
         {
@@ -476,7 +479,7 @@ export function defineMissions(city) {
         {
           objective: 'Lose the heat at Paint & Pray',
           marker: () => markerAt(P.garage, VIOLET, 'PAINT & PRAY'),
-          enter(state) { state.wanted.min = 0; state.wanted.max = 5; say(state, 'DARIO', 'Done! Paint & Pray, west end of 8th. Go!'); },
+          enter(state) { state.wanted.min = 0; state.wanted.max = 5; say(state, 'DARIO', 'Done! Paint & Pray. Go!'); },
           update(state) {
             if (near(state.player, P.garage, 60)) { clearWanted(state); respray(state); return 'next'; }
           },
@@ -487,10 +490,11 @@ export function defineMissions(city) {
       id: 'docks', day: 3, title: 'MUELLE CINCO', giver: 'INES', start: P.taqueria, reward: 4000,
       briefing: 'Dario wants to hand over your share at Muelle Cinco, the marina warehouse. Inés smells a set-up. Go anyway, and come back with the harbour ledger.',
       dialogue: [
-        ['INES', 'Dario wants you alone at the docks. I don\'t like it.'],
-        ['RIO', 'Neither do I. That\'s why I\'m going.'],
+        ['INES', 'Dario wants you at the docks.'],
+        ['INES', 'Alone. I don\'t like it.'],
+        ['RIO', 'Neither do I. I\'m going.'],
       ],
-      outro: ['INES', 'Dario sold you to Teo. Teo is finished. Bring me the ledger — or don\'t.'],
+      outro: ['INES', 'Dario sold you. Teo is finished.'],
       stages: [
         {
           objective: 'Meet Dario at Muelle Cinco',
@@ -504,8 +508,8 @@ export function defineMissions(city) {
             m.dario = spawnCrew(state, cx, cy - 40, [[0, 0]], { shirt: VIOLET, hat: null, look: { hold: 3, coward: true, armed: false } })[0];
             m.teo = spawnCrew(state, cx, cy + 40, [[0, 0]], { shirt: PINK, hat: null, health: JOBS.rivalHealth, look: { hold: 4, rival: true } })[0];
             m.crew.push(m.dario, m.teo, ...spawnCrew(state, cx, cy, ring(5, 230, 0.3), { look: { hold: 4 } }));
-            say(state, 'DARIO', 'Sorry, Rio. Teo pays in cash. Inés pays in promises.');
-            state.dialogueQueue.splice(1, 0, ['TEO', 'The ledger, the car, then you. In that order.', PINK]);
+            say(state, 'DARIO', 'Sorry, Rio. Teo pays cash.');
+            state.dialogueQueue.splice(1, 0, ['TEO', 'The ledger, the car, then you.', PINK]);
           },
           update(state, m) { if (m.timer <= 0) return 'next'; },
         },
@@ -522,14 +526,14 @@ export function defineMissions(city) {
         {
           objective: 'Take the harbour ledger',
           marker: (state, m) => markerAt(m.teo, GREEN, 'LEDGER', 30),
-          enter(state) { state.noGunHeat = false; say(state, 'RIO', 'Teo\'s done. Dario ran. The ledger\'s on the body.'); },
+          enter(state) { state.noGunHeat = false; say(state, 'RIO', 'Teo\'s done. Dario ran.'); },
           update(state, m) {
             if (near(state.player, m.teo, 40)) { state.notify('Harbour ledger taken', GREEN); sfx('pickup', 0.9); return 'next'; }
           },
         },
         {
           objective: 'Escape the police',
-          enter(state) { setWanted(state, 2); say(state, 'RADIO', 'Shots fired at Muelle Cinco. All units.'); },
+          enter(state) { setWanted(state, 2); say(state, 'RADIO', 'Shots at Muelle Cinco. All units.'); },
           update(state) { if (state.wanted.level === 0) return 'next'; },
         },
       ],
@@ -539,8 +543,9 @@ export function defineMissions(city) {
       rewardText: 'PAYS $6,000 (Inés) OR $14,000 (the broker)',
       briefing: 'Two buyers want the harbour ledger. Inés pays $6,000 and keeps you safe. The harbour broker pays $14,000 and every cop in Puerto Ámbar comes for you. Drive to the one you choose.',
       dialogue: [
-        ['NANDO', 'Two buyers, Rio. Inés wants it for the city. The broker wants it for himself.'],
-        ['NANDO', 'One pays in loyalty, one pays in cash. Choose.'],
+        ['NANDO', 'Two buyers want the ledger.'],
+        ['NANDO', 'Inés pays loyalty. Broker pays cash.'],
+        ['NANDO', 'One pays in trust. Choose.'],
       ],
       outro: (state, m) => (m.choice === 'sold'
         ? ['NANDO', 'Fourteen thousand and every cop in town. Don\'t come by the bar for a while.']
@@ -565,7 +570,7 @@ export function defineMissions(city) {
         },
         {
           objective: 'Inés knows — escape with the money',
-          enter(state) { setWanted(state, 3); say(state, 'INES', 'You sold my city, Rio. Let\'s see if it keeps you.'); },
+          enter(state) { setWanted(state, 3); say(state, 'INES', 'You sold my city, Rio.'); },
           update(state) { if (state.wanted.level === 0) return 'next'; },
         },
       ],
