@@ -4,9 +4,28 @@
 import { HUD, WORLD, POLICE } from './config.js';
 import { roadCenter, ROADS_X, ROADS_Y } from './city.js';
 import { evadeTime } from './police.js';
+import { radioLine } from './radio.js';
 
 const $ = (id) => document.getElementById(id);
 const MM_SCALE = 0.09;
+/** One world pixel is one metre: the distances the HUD prints, and nothing in the simulation. */
+const METRES_PER_PX = 1;
+const NAMED = { INES: 'Inés Ocampo', DARIO: 'Dario Kell', NANDO: 'Nando Reyes', TEO: 'Teo Castellan' };
+
+/** The objective line with its runtime index: "MISI 4/12 — COLLECTION". */
+function missionLine(obj, idx) {
+  if (!idx || !idx.n || !obj) return obj || '';
+  return `MISI ${idx.n}/${idx.total} — ${obj}`;
+}
+
+/** Distance to the objective: "214 m to Inés Ocampo". */
+function distanceLine(state, m) {
+  const pt = m.point;
+  if (!pt) return '';
+  const body = state.player.car || state.player;
+  const d = Math.round(Math.hypot(pt.x - body.x, pt.y - body.y) * METRES_PER_PX);
+  return m.title ? `${d} m to ${m.title}` : `${d} m to the objective`;
+}
 
 export function initHud(state) {
   const els = {};

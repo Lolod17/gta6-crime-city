@@ -58,6 +58,25 @@ function refreshMarkers(state) {
 
 const rewardOf = (m) => (m.reward !== undefined ? m.reward : m.def.reward);
 
+/** The position the distance line measures to: the nearest ground marker, or none. */
+export function objectivePoint(state) {
+  let best = null;
+  let bestD = Infinity;
+  const body = state.player.car || state.player;
+  for (const mk of state.fx.markers) {
+    if (!mk) continue;
+    const d = Math.hypot(mk.x - body.x, mk.y - body.y);
+    if (d < bestD) { bestD = d; best = mk; }
+  }
+  return best;
+}
+
+/** Where a running mission sits in the list at runtime, and the list's total: never typed by hand. */
+function missionIndex(state, def) {
+  if (def.kind !== 'mission') return { n: null, total: null };
+  return { n: state.missionDefs.indexOf(def) + 1, total: state.missionDefs.length };
+}
+
 function startJob(state, def) {
   state.mission = { def, stage: -1, timer: null, entities: [], crew: [], targets: [], fight: { on: false }, objectiveOverride: null };
   state.dialogueQueue = (def.dialogue || []).map(([who, text]) => [CAST[who] ? CAST[who].name : who, text, CAST[who] ? CAST[who].color : '#fff']);
@@ -194,6 +213,8 @@ export function updateJobs(state, dt) {
     state.missionView = state.briefing ? null : {
       objective: next ? `Next: ${next.title} — meet ${CAST[next.giver].full} at the yellow marker` : 'Free roam — side jobs at the blue markers',
       timer: null,
+      index: next ? missionIndex(state, next) : { n: null, total: state.missionDefs.length },
+      point: next ? next.start : null,
     };
     return;
   }
@@ -215,7 +236,10 @@ export function updateJobs(state, dt) {
   if (!state.mission) { state.missionView = null; refreshMarkers(state); return; }
   refreshMarkers(state);
   const cur = m.def.stages[m.stage];
-  state.missionView = { objective: m.objectiveOverride || cur.objective, timer: m.timer, title: m.def.title };
+  state.missionView = {
+    objective: m.objectiveOverride || cur.objective, timer: m.timer, title: m.def.title,
+    index: missionIndex(state, m.def), point: objectivePoint(state),
+  };
 }
 
 export { say };

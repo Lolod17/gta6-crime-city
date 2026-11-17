@@ -4,23 +4,26 @@
 // the line the station would print on its display. Nothing here changes the simulation.
 import { RADIO } from './config.js';
 
-/** Each station cycles its own tracks; the player hears one at a time. */
+/** Each station cycles its own tracks and sits on the dial as `frequency`, for the HUD line. */
 export const STATIONS = [
   {
     id: 'sol',
-    name: 'RADIO SOL 98.7',
+    name: 'SOL FM',
+    frequency: '98.7',
     kind: 'Pop y salsa',
-    tracks: ['Sundown Drive', 'Ámbar Nights', 'Costa Rosada', 'Slow Traffic', 'Muelle 5'],
+    tracks: ['Bayside Drive', 'Ámbar Nights', 'Costa Rosada', 'Slow Traffic', 'Muelle 5'],
   },
   {
     id: 'brasa',
-    name: 'LA BRASA 105.3',
+    name: 'LA BRASA',
+    frequency: '105.3',
     kind: 'Cumbia',
     tracks: ['Cumbia del Mar', 'Puerto Caliente', 'Baila Paloma', 'Tres de la Mañana', 'El Rescate'],
   },
   {
     id: 'wave',
     name: 'MAREJADA FM',
+    frequency: '89.1',
     kind: 'Synthwave',
     tracks: ['Neon Lindo', 'Boardwalk Hours', 'Last Summer', 'Palm Static', 'Highway Americas'],
   },
@@ -31,10 +34,11 @@ export function createRadio() {
   return { station: 0, track: 0, t: 0, muted: false, key: 'KeyM' };
 }
 
-/** The line the HUD prints: station and current track. */
+/** The line the HUD prints: station, current track, and `· muted` when the radio is muted. */
 export function radioLine(radio) {
   const s = STATIONS[radio.station];
-  return { station: s.name, track: s.tracks[radio.track], kind: s.kind };
+  const text = `${s.name} · ${s.tracks[radio.track]}${radio.muted ? ' · muted' : ''}`;
+  return { station: s.name, frequency: s.frequency, track: s.tracks[radio.track], muted: !!radio.muted, kind: s.kind, text };
 }
 
 /** Advance the clock of the radio: every RADIO.trackSeconds the track changes. */
