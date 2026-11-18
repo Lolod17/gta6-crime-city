@@ -1,7 +1,11 @@
+// main.js — JOB: boot, input, the fixed-step loop and the screen state machine (title, play, pause, dead,
+//   briefing, shop).
+// EXPORTS: state (the one shared game state; it also boots and runs the game on load)
+//
 // SUNDOWN: Puerto Ámbar — boot, the fixed-step loop, input, and the state machine
 // (title -> play <-> pause, play -> dead -> play, play -> job briefing -> play, play -> shop -> play).
 // Every module reads and writes the one shared `state` object built here.
-import { STEP, SLOW_FRAME_MS, WORLD, PLAYER, POLICE, CLOCK } from './config.js';
+import { STEP, SLOW_FRAME_MS, WORLD, PLAYER, POLICE } from './config.js';
 import { buildCity, makeRng, isBlocked } from './city.js';
 import { createRenderer, resizeRenderer, renderFrame, createFx, updateEffects, floatText, warmGround, burst } from './render.js';
 import { createCamera, updateCamera, placeCamera, toWorld } from './camera.js';
@@ -14,6 +18,7 @@ import { defineMissions } from './missions.js';
 import { defineActivities } from './activities.js';
 import { beginDay } from './story.js';
 import { updateDistricts, resetDistricts } from './districts.js';
+import { DAY_OPENS, advanceClock } from './clock.js';
 import { createRadio, updateRadio, toggleMute, radioLine } from './radio.js';
 import { updateShop, restoreOwned } from './shop.js';
 import { witnessShot, updateWitnesses } from './witnesses.js';
@@ -40,7 +45,7 @@ function createState() {
     input: { keys: new Set(), pressed: new Set(), mouse: { x: 0, y: 0, wx: 0, wy: 0, down: false, clicked: false, active: false } },
     dialogue: null, banner: null, hint: '', missionView: null, flash: 0, deadTimer: 0, timeScale: 1,
     mission: null,
-    loc: { id: null }, locationBanner: null, dayMinute: CLOCK.startMinute + 24, radio: createRadio(),
+    loc: { id: null }, locationBanner: null, dayMinute: DAY_OPENS, radio: createRadio(),
   };
   s.notify = (text, color) => pushNotice(s, text, color);
   s.crime = (kind, x, y) => { if (s.mode === 'play' && !(kind === 'gunfire' && s.noGunHeat)) reportCrime(s, kind, x, y); };
@@ -237,7 +242,7 @@ function stepWorld(dt) {
     updateWitnesses(state, dt);
     updateDistricts(state, dt);
     // the clock and the radio run with play; the HUD reads them, the simulation never does
-    state.dayMinute = (state.dayMinute + dt * CLOCK.minutePerSecond) % (CLOCK.dayLength * 60);
+    advanceClock(state, dt);
     updateRadio(state, state.radio, dt);
   }
   if (state.mode !== 'pause') {

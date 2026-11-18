@@ -1,3 +1,6 @@
+// shop.js — JOB: places that take cash: Punta Arms, the safehouse garage and the Paint & Pray respray.
+// EXPORTS: RESPRAY_PRICE, respray, shopMarkers, ownedList, restoreOwned, updateShop
+//
 // Places that take cash: Punta Arms (armour, shotgun, carbine), the safehouse garage (the Cometa SX
 // bought here waits there on every visit) and Paint & Pray (a respray loses the PAPD for $250).
 // Everything the player owns shows in the HUD; nothing is unlocked without paying for it.

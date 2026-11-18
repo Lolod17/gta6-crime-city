@@ -1,9 +1,13 @@
+// racing.js — JOB: street racing: checkpoint routes on the road grid, checkpoint progress, and the rival
+//   driver.
+// EXPORTS: junctions, routeThrough, createRace, updateRace, createRival, updateRival, rivalProgress
+//
 // Street racing: checkpoint routes laid along the road grid, the checkpoint ring the player must
 // drive through, and a rival driver who runs the same route. Used by the race against Teo Castellan
 // (Day 2) and the replayable checkpoint sprint (activities.js).
 import { roadCenter } from './city.js';
 import { createVehicle, forwardSpeed } from './vehicle.js';
-import { JOBS } from './config.js';
+import { JOBS, CAR } from './config.js';
 
 /** Road intersections (i, j) -> pixel points. */
 export const junctions = (list) => list.map(([i, j]) => ({ x: roadCenter(i), y: roadCenter(j) }));
@@ -72,15 +76,20 @@ export function updateRival(state, v, dt) {
     corner = Math.abs(Math.atan2(Math.sin(a2 - a1), Math.cos(a2 - a1)));
   }
   const top = v.topSpeed * JOBS.rivalSpeed;
-  const limit = corner > 0.6 ? Math.max(210, Math.min(top, d * 1.5)) : top;
+  // brake for a corner from as far out as the brakes need (v² = v0² + 2·a·d, at 70% of the brake so
+  // he arrives a little under): a linear d·1.5 ramp asked for more braking than a car has, so he
+  // flew into the first corner at full speed, wedged against the kerb buildings and wrecked himself
+  const cornerSpeed = 210;
+  const limit = corner > 0.6 ? Math.min(top, Math.sqrt(cornerSpeed * cornerSpeed + 2 * CAR.brake * 0.7 * Math.max(0, d - 40))) : top;
   if (r.reverse > 0) {
     r.reverse -= dt;
     c.throttle = 0; c.brake = 1; c.steer = -Math.sign(diff); c.handbrake = false;
     return;
   }
   c.steer = Math.max(-1, Math.min(1, diff * 2.4));
-  c.throttle = fs < limit && Math.abs(diff) < 1.3 ? 1 : 0.3;
-  c.brake = fs > limit + 40 ? 1 : 0;
+  // vehicle.js ignores the brake while any throttle is held, so braking means lifting off entirely
+  c.brake = fs > limit + 15 ? 1 : 0;
+  c.throttle = c.brake ? 0 : fs < limit && Math.abs(diff) < 1.3 ? 1 : 0.3;
   c.handbrake = Math.abs(diff) > 0.9 && fs > 260;
   // wedged against something: back up for a moment
   if (Math.abs(fs) < 25) { r.stuck += dt; if (r.stuck > 1.2) { r.reverse = 0.8; r.stuck = 0; } } else r.stuck = 0;

@@ -1,3 +1,7 @@
+// hud.js — JOB: the DOM heads-up display: stars, cash, weapon, minimap, health/armour, mission label,
+//   objective, distance, clock, radio, banners, dialogue, speedometer, key hint.
+// EXPORTS: missionLabel, distanceLine, hintLine, initHud, pushNotice, updateHud
+//
 // HUD: wanted stars, cash, health and armour, weapon, speed, minimap with blips and the mission
 // marker, mission objective and timer, dialogue subtitles, 1.5 s notices for anything that costs or
 // pays, and the big centre banners (mission passed, wasted, busted).
@@ -6,6 +10,7 @@ import { roadCenter, ROADS_X, ROADS_Y } from './city.js';
 import { evadeTime } from './police.js';
 import { radioLine } from './radio.js';
 import { districtAt } from './districts.js';
+import { clockParts } from './clock.js';
 
 const $ = (id) => document.getElementById(id);
 const MM_SCALE = 0.09;
@@ -36,10 +41,20 @@ export function distanceLine(state, view) {
   return `${d} m to ${view.to || pt.label || districtAt(state.city, pt.x, pt.y).name}`;
 }
 
-/** "DAY 1 18:24": the story day from the mission arc and the clock from play. */
-export function clockParts(state) {
-  const mins = Math.floor(state.dayMinute || 0);
-  return { day: `DAY ${state.progress.day}`, time: `${String(Math.floor(mins / 60) % 24).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}` };
+/** The one-line key hint above the dialogue: job briefing, shop counter, mission hint, or the car in reach. */
+export function hintLine(state) {
+  if (state.mode !== 'play' && state.mode !== 'mission' && state.mode !== 'shop') return '';
+  const p = state.player;
+  if (state.briefing) return 'ENTER — take the job    BACKSPACE — not now';
+  if (state.mode === 'shop') return '1–4 — buy    BACKSPACE — leave the counter';
+  if (state.missionHint) return state.missionHint;
+  if (p.car) return '';
+  for (const v of state.vehicles) {
+    if (!v.dead && v.driver !== 'player' && Math.hypot(v.x - p.x, v.y - p.y) < 70) {
+      return v.driver ? `F — steal the ${v.name}` : `F — get in the ${v.name}`;
+    }
+  }
+  return '';
 }
 
 export function initHud(state) {

@@ -51,3 +51,41 @@
 - **Screenshots** were taken by a sampler that only saves a frame when every layer the scene needs
   is visible at once (tools outside the repo). The robot's car health was topped up during the
   chase takes; the frames themselves are unedited JPEGs from Chrome.
+
+## Pass 4: recorded playthrough, one job per file
+
+- **Playthrough.** Each of the twelve missions was started and played with real input: a save with
+  the earlier missions done, a real click on CONTINUE, W/A/S/D driving to the yellow marker, Enter,
+  then keys and mouse clicks for the objective. Results per mission are in `../PLAYLOG.md` (outside
+  the repo, with the test tools). As in earlier passes, the robot's car and body health were topped
+  up because it crashes far more than a person does. FRAGILE and THE AURELIA were the exception: car
+  damage is their objective, so they ran with no top-up.
+- **What blocked missions, and the fixes:**
+  - STREET RACE. Teo's AI held 30% throttle while braking, and `vehicle.js` ignores the brake while
+    any throttle is held. He reached the first corner at full speed, wedged against the houses, and
+    scraped there until his car was wrecked, so the race was never contested. He now lifts off to
+    brake, and brakes from the real stopping distance (v² = v₀² + 2·a·d). He finishes the lap in
+    about 36 s, at 94% of his car's top speed.
+  - PROTECTION. Nando spawned on the marker, under the car the player had just arrived in, and
+    started at 25% health. He now waits on the pavement, clear of the car and off the road. The
+    clinic shootout no longer draws PAPD heat from gunfire, as with the warehouse and docks fights;
+    before, witness calls stacked four stars and the crossfire killed him.
+  - THE TAIL. The accountant spawned 47 m from the player, so suspicion built before the player
+    could move. He now starts about 330 m ahead, in view. Suspicion cannot build during the opening
+    grace, which went from 4 s to 9 s.
+  - THREE DROPS. At up to five stars, a single scrape snowballed and the clock always ran out. The
+    wanted level is now pinned at 1–2 stars and the collection timer went from 160 s to 200 s.
+  - Escape stages (THE WAREHOUSE, MUELLE CINCO, THE LEDGER sold). These now mark Paint & Pray: a
+    respray ends the stage, the same way out free roam already offers. Before, a chase that had
+    climbed to five stars could go on for minutes.
+  - COLLECTION and THE AURELIA. The wanted level is capped at 2, below the star at which cruisers
+    shoot. Before, the first mission became a five-star manhunt and rammed cars failed the bodywork
+    objective. MUELLE CINCO hands over Inés's vest before the seven-gun ambush.
+- **Source outline.** Every file under `game/src/` opens with a `JOB:` line (its one job) and an
+  `EXPORTS:` line. Logic that lived in the wrong file moved into the file named for it:
+  - Clock code was spread over `main.js`, `story.js`, `hud.js` and `render.js`. It now lives in
+    the new `clock.js`.
+  - The key hint moved from `main.js` to `hud.js` (`hintLine`).
+  - THE TAIL's lane-car spawner moved from `missions.js` to `traffic.js` (`spawnLaneCar`).
+  - `seatPlayer` moved from `missions.js` to `player.js`.
+  - Two unused re-exports (`CAR` from `police.js`, `say` from `jobs.js`) are gone.

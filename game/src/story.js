@@ -1,7 +1,13 @@
+// story.js — JOB: the story frame: cast, the three days and their lines, the subtitle queue, and which
+//   mission is unlocked.
+// EXPORTS: CAST, DAYS, LAST_DAY, say, queueLines, updateDialogue, nextMission, missionsOfDay, storyComplete,
+//   beginDay, completeMission, updateStory, dayLabel
+//
 // The story of SUNDOWN: Puerto Ámbar — the cast, the three days, each day's spoken lines, the
 // subtitle queue, and which mission is unlocked. Missions unlock in order inside a day; the day
 // advances only when every mission of that day is done. missions.js holds the missions themselves.
 import { sfx } from './audio.js';
+import { resetClock } from './clock.js';
 
 /** The named cast. Rio is the player. Teo Castellan is the rival. All names are original. */
 export const CAST = {
@@ -86,7 +92,7 @@ export function beginDay(state) {
   const d = DAYS[day];
   if (!d) return;
   state.dayCard = { title: `DAY ${day}`, sub: d.title, life: 4 };
-  state.dayMinute = 18 * 60 + 24;   // every day of the story opens at dusk
+  resetClock(state);   // every day of the story opens at dusk
   queueLines(state, d.lines);
 }
 

@@ -1,3 +1,7 @@
+// config.js — JOB: every tunable number in the game, in one place.
+// EXPORTS: STEP, SLOW_FRAME_MS, WORLD, CAMERA, CAR, PLAYER, WEAPONS, WEAPON_ORDER, SHOP, JOBS, TRAFFIC,
+//   POLICE, GANG, HUD, CLOCK, RADIO, AUDIO, COLORS
+//
 // Every tunable number in one place. Distances are world pixels, times are seconds, speeds px/s.
 // The rest of the game imports from here and hard-codes nothing it might want to tune.
 
@@ -89,13 +93,13 @@ export const SHOP = {
 
 /** Mission and activity tunables. */
 export const JOBS = {
-  vipHealth: 120,        // the protection client
+  vipHealth: 160,        // the protection client (two squads of Glasshands)
   rivalHealth: 160,      // Teo Castellan on foot at the docks
   tailNear: 150,         // closer than this with line of sight and the tail target grows suspicious
   tailFar: 620,          // further than this and he is lost
   tailSuspicion: 34,     // suspicion per second while too close (100 fails)
-  rivalSpeed: 0.97,      // rival race driver top speed, fraction of his car's
-  intactShare: 0.6,      // a delivered car must keep this much health
+  rivalSpeed: 0.94,      // rival race driver top speed, fraction of his car's (beatable with clean lines)
+  intactShare: 0.5,      // a delivered car must keep this much health (half the bodywork, as FRAGILE)
   fragileShare: 0.5,     // the glassware van
   witnessCall: 2.4,      // seconds a witness spends on the phone before the PAPD hears
 };

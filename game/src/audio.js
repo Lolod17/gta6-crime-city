@@ -1,3 +1,7 @@
+// audio.js — JOB: all sound, synthesised with WebAudio: engine, siren, screech, gunfire, crashes, ambience
+//   and the radio theme.
+// EXPORTS: initAudio, sfx, setListener, updateAudio
+//
 // WebAudio synthesis, no samples: an engine whose pitch climbs through five gears, the PAPD siren
 // wail (loudest from the nearest cruiser in pursuit), tyre screech, gunshots, crashes, explosions,
 // city hum and surf by the beach, UI jingles, and "Sundown Drive" — the title theme, which also

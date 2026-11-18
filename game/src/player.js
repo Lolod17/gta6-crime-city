@@ -1,3 +1,8 @@
+// player.js — JOB: the player: walking, aiming, shooting, getting in and out of cars, bullets, and cars
+//   hitting people.
+// EXPORTS: createPlayer, updatePlayer, moveCircle, fireWeapon, spawnBullet, updateBullets, tryEnterVehicle,
+//   exitVehicle, seatPlayer, carHitsPeople
+//
 // The player: on-foot movement (walk/sprint), mouse aim, shooting, entering, stealing and leaving
 // cars, and driving with the keyboard. Bullets from anyone are stepped here as well.
 import { PLAYER, CAR, WEAPONS, WEAPON_ORDER } from './config.js';
@@ -215,6 +220,14 @@ export function exitVehicle(state, forced = false) {
   p.car = null;
   p.vx = 0; p.vy = 0;
   sfx('door', 0.8, v.x, v.y);
+}
+
+/** Put the player behind the wheel of v (the race start). */
+export function seatPlayer(state, v) {
+  const p = state.player;
+  if (p.car && p.car !== v) { p.car.driver = null; }
+  v.driver = 'player';
+  p.car = v; p.x = v.x; p.y = v.y; p.vx = 0; p.vy = 0;
 }
 
 /** Running a person down: the car's speed decides how hard. */

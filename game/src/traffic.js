@@ -1,9 +1,13 @@
+// traffic.js — JOB: city life: civilian cars driving the lanes, pedestrians, parked cars, cash pickups.
+// EXPORTS: makePerson, initTraffic, populate, driveAlongRoads, updateTraffic, scarePeople, hurtPed,
+//   ejectDriver, updatePickups, spawnLaneCar, loopPoint, DIRS, laneX, laneY, validDir, pickTurn
+//
 // City life: civilian cars that follow the street grid in their lanes and turn at junctions,
 // pedestrians walking the sidewalks who flee from gunfire, parked cars, cash pickups. Everything
 // spawns in a ring just outside the screen and despawns behind the player, at a density the frame
 // time allows.
 import { TRAFFIC, WORLD, CAR } from './config.js';
-import { roadCenter, blockStart, BLOCK_SIZE, ROADS_X, ROADS_Y } from './city.js';
+import { roadCenter, blockStart, BLOCK_SIZE, ROADS_X, ROADS_Y, nearestNode } from './city.js';
 import { createVehicle, CIVILIAN_MODELS, forwardSpeed } from './vehicle.js';
 import { moveCircle } from './player.js';
 import { burst, addDecal, floatText } from './render.js';
@@ -387,6 +391,23 @@ export function updatePickups(state, dt) {
     out.push(it);
   }
   state.pickups = out;
+}
+
+/** A car driven by the traffic AI, starting `along` px down a lane from the junction nearest p (THE TAIL's target). */
+export function spawnLaneCar(state, p, model, color, cruise, along = 170) {
+  const node = nearestNode(p.x, p.y);
+  const dirs = [0, 1, 2, 3].filter((d) => validDir(node.i, node.j, d));
+  const d = dirs[Math.floor(state.rng() * dirs.length)];
+  const x = d % 2 === 0 ? roadCenter(node.i) + DIRS[d][0] * along : laneX(node.i, d);
+  const y = d % 2 === 1 ? roadCenter(node.j) + DIRS[d][1] * along : laneY(node.j, d);
+  const v = createVehicle(model, x, y, Math.atan2(DIRS[d][1], DIRS[d][0]), state.rng);
+  v.color = color;
+  v.driver = 'ai';
+  const ni = node.i + DIRS[d][0], nj = node.j + DIRS[d][1];
+  v.ai = { d, i: ni, j: nj, next: pickTurn(state.rng, ni, nj, d), panic: 0, wait: 0, cruise };
+  v.mission = true;
+  state.vehicles.push(v);
+  return v;
 }
 
 export { loopPoint, DIRS, laneX, laneY, validDir, pickTurn };

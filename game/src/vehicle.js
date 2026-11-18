@@ -1,3 +1,7 @@
+// vehicle.js — JOB: car models and car physics: driving, drift, collisions, damage, fire and explosions.
+// EXPORTS: MODELS, CIVILIAN_MODELS, createVehicle, forwardSpeed, speedOf, updateVehicle, collideWorld,
+//   collideVehicles, damageVehicle, explodeVehicle, isPursuitCar, POLICE_TOP
+//
 // Car physics: throttle, brake and reverse, speed-scaled steering, grip and handbrake drift,
 // circle collisions against buildings, trees, the shore and other cars, damage, fire, explosions.
 import { CAR, WORLD, POLICE } from './config.js';

@@ -1,3 +1,6 @@
+// missions.js — JOB: the twelve story missions as data for the job runner.
+// EXPORTS: defineMissions
+//
 // The twelve story missions of SUNDOWN: Puerto Ámbar, as a three-day arc for Rio Salcedo.
 //   Day 1 — LEARN THE CITY: Collection, Fragile, The Tail, The Dash
 //   Day 2 — THE CREW:       Three Drops, Street Race, Protection, The Warehouse
@@ -5,10 +8,11 @@
 // Each mission is data for the runner in jobs.js: a giver, a start marker, a briefing, dialogue,
 // a reward, and stages (objective line, timer, markers, fail condition). story.js decides which one
 // is unlocked; crew.js and racing.js supply the gunmen and the rival driver.
-import { JOBS } from './config.js';
-import { lineOfSight, blockStart, BLOCK_SIZE, nearestNode, roadCenter } from './city.js';
+import { JOBS, WORLD } from './config.js';
+import { lineOfSight, blockStart, BLOCK_SIZE, roadCenter } from './city.js';
 import { setWanted, clearWanted } from './police.js';
-import { makePerson, DIRS, laneX, laneY, validDir, pickTurn } from './traffic.js';
+import { makePerson, spawnLaneCar } from './traffic.js';
+import { seatPlayer } from './player.js';
 import { createVehicle } from './vehicle.js';
 import { burst } from './render.js';
 import { sfx } from './audio.js';
@@ -34,14 +38,6 @@ function spawnCar(state, m, pt, model = 'pelican', dx = 46, dy = 0) {
   return v;
 }
 
-/** Put the player behind the wheel of v (the race start). */
-function seatPlayer(state, v) {
-  const p = state.player;
-  if (p.car && p.car !== v) { p.car.driver = null; }
-  v.driver = 'player';
-  p.car = v; p.x = v.x; p.y = v.y; p.vx = 0; p.vy = 0;
-}
-
 /** Stage: get into any car (one is parked beside the marker if the player arrived on foot). */
 const getACar = (objective = 'Get in a car') => ({
   objective,
@@ -50,26 +46,23 @@ const getACar = (objective = 'Get in a car') => ({
   update(state) { if (state.player.car) return 'next'; },
 });
 
-/** A road car driven by the traffic AI, starting on a lane near the player (the tail target). */
-function spawnRoadCar(state, m, model, color, cruise) {
-  const p = state.player;
-  const node = nearestNode(p.x, p.y);
-  const dirs = [0, 1, 2, 3].filter((d) => validDir(node.i, node.j, d));
-  const d = dirs[Math.floor(state.rng() * dirs.length)];
-  const along = 170;
-  const x = d % 2 === 0 ? roadCenter(node.i) + DIRS[d][0] * along : laneX(node.i, d);
-  const y = d % 2 === 1 ? roadCenter(node.j) + DIRS[d][1] * along : laneY(node.j, d);
-  const v = createVehicle(model, x, y, Math.atan2(DIRS[d][1], DIRS[d][0]), state.rng);
-  v.color = color;
-  v.driver = 'ai';
-  const ni = node.i + DIRS[d][0], nj = node.j + DIRS[d][1];
-  v.ai = { d, i: ni, j: nj, next: pickTurn(state.rng, ni, nj, d), panic: 0, wait: 0, cruise };
-  v.mission = true;
-  state.vehicles.push(v);
-  m.entities.push(v);
-  return v;
-}
-
+/**
+ * Stage: lose the PAPD. Either stay out of sight until the stars go, or drive into Paint & Pray for a
+ * respray (marked on the map, free during a job). Without the garage a robot run that had climbed to
+ * five stars could circle for minutes; the respray is the same way out free roam already offers.
+ */
+const escapeStage = (level, who, line, objective = 'Escape the police') => ({
+  objective,
+  enter(state) { setWanted(state, level); say(state, who, line); },
+  marker: (state) => markerAt(state.city.places.garage, VIOLET, 'PAINT & PRAY', 46),
+  update(state) {
+    const P = state.city.places;
+    if (state.player.car && near(state.player, P.garage, 60)) { clearWanted(state); respray(state); state.notify('Resprayed — the PAPD lost you', VIOLET); }
+    const m = state.mission;
+    if (m) m.objectiveOverride = `${objective} — or respray at Paint & Pray`;
+    if (state.wanted.level === 0) return 'next';
+  },
+});
 /** The race checkpoints against Teo: a lap of downtown and the marina that ends where it began. */
 const RACE_LINE = [[1, 4], [4, 4], [4, 8], [7, 8], [7, 4], [5, 1], [1, 1]];
 
@@ -101,7 +94,7 @@ export function defineMissions(city) {
           marker: () => markerAt(P.drop, Y, 'DROP-OFF'),
           enter(state) {
             state.notify('Crate loaded', Y); sfx('pickup', 0.8);
-            setWanted(state, 1);
+            setWanted(state, 1, 0, 2);   // the first job: a harbour patrol, never a five-star manhunt
             say(state, 'RADIO', 'Marina hit. Units respond.');
           },
           update(state) { if (near(state.player, P.drop, 55)) return 'next'; },
@@ -156,8 +149,9 @@ export function defineMissions(city) {
         {
           objective: 'Tail the accountant', timer: 65, survive: true,
           enter(state, m) {
-            m.target = spawnRoadCar(state, m, 'sol', '#f7f0d8', 175);
-            m.sus = 0; m.grace = 4;
+            m.target = spawnLaneCar(state, state.player, 'sol', '#f7f0d8', 175, 330);   // ahead, in view, not yet suspicious
+            m.entities.push(m.target);
+            m.sus = 0; m.grace = 9;   // time to turn and pick him up before 'lost' applies
             say(state, 'DARIO', 'There — the white Sol.');
           },
           marker: (state, m) => markerAt(m.target, RED, 'TARGET', 30),
@@ -168,7 +162,7 @@ export function defineMissions(city) {
             const d = Math.hypot(t.x - p.x, t.y - p.y);
             if (m.grace > 0) m.grace -= dt;
             else if (d > JOBS.tailFar) return '!You lost him.';
-            if (d < JOBS.tailNear && lineOfSight(state.city, t.x, t.y, p.x, p.y)) m.sus += JOBS.tailSuspicion * dt;
+            if (m.grace <= 0 && d < JOBS.tailNear && lineOfSight(state.city, t.x, t.y, p.x, p.y)) m.sus += JOBS.tailSuspicion * dt;
             else m.sus = Math.max(0, m.sus - 10 * dt);
             if (m.sus >= 100) { t.ai.panic = 99; return '!He made you — the accountant is spooked.'; }
             m.objectiveOverride = `Tail the accountant — ${Math.round(d)} m back · suspicion ${Math.round(m.sus)}%`;
@@ -217,10 +211,12 @@ export function defineMissions(city) {
       stages: [
         getACar(),
         {
-          objective: 'Collect the packages', timer: 160,
+          objective: 'Collect the packages', timer: 200,
           enter(state, m) {
             m.got = [false, false, false];
-            setWanted(state, 1, 1, 5);
+            // pinned between one and two stars: the PAPD shadows the drops, it never swarms them
+            // (at up to five stars a single scrape snowballed and the clock always ran out)
+            setWanted(state, 1, 1, 2);
             state.notify('The PAPD is watching the drops', RED);
           },
           marker: (state, m) => P.parcels.map((pt, i) => (m.got[i] ? null : markerAt(pt, GREEN, 'PACKAGE', 40))),
@@ -309,12 +305,24 @@ export function defineMissions(city) {
         {
           objective: 'Protect Nando from the hit squad',
           enter(state, m) {
-            const at = openGround(state.city, P.clinic.x, P.clinic.y);
+            // Nando waits on the pavement a few steps from the marker, never under the player's car
+            // (spawned on the marker itself he was run over by the car the player arrived in)
+            const body = state.player.car || state.player;
+            let at = openGround(state.city, P.clinic.x, P.clinic.y);
+            const offRoad = (q) => Math.floor(q.x / WORLD.tile) % 6 >= 2 && Math.floor(q.y / WORLD.tile) % 6 >= 2;
+            for (const [dx, dy] of [[0, 90], [0, -90], [90, 0], [-90, 0], [30, 120], [30, -120], [120, 30], [-120, 30]]) {
+              if (Math.hypot(at.x - body.x, at.y - body.y) >= 80 && offRoad(at)) break;
+              at = openGround(state.city, P.clinic.x + dx, P.clinic.y + dy);
+            }
             const v = makePerson('vip', at.x, at.y, state.rng);
             v.shirt = '#2bd9a6'; v.pants = '#2c3440'; v.hair = '#3b2a1a'; v.health = JOBS.vipHealth; v.vip = true; v.mission = true;
             state.peds.push(v);
             m.vip = v; m.targets.push(v);
             m.crew.push(...spawnCrew(state, P.clinic.x, P.clinic.y, ring(3, 420, 0.4), { awake: true }));
+            // a defensive fight outside a clinic: the gunfire itself brings no PAPD (as at the warehouse
+            // and the docks); without this, witness calls stacked four stars and the cops' crossfire
+            // killed Nando before the second squad arrived
+            state.noGunHeat = true;
             say(state, 'GANG', 'The barman! Nobody leaves!');
           },
           marker: (state, m) => markerAt(m.vip, GREEN, 'NANDO', 22),
@@ -339,7 +347,7 @@ export function defineMissions(city) {
         },
         {
           objective: 'Pick Nando up in a car',
-          enter(state, m) { if (!state.player.car) m.spare = spawnCar(state, m, m.vip, 'pelican', 60, 0); say(state, 'NANDO', 'Get a car. I\'m not walking.'); },
+          enter(state, m) { state.noGunHeat = false; if (!state.player.car) m.spare = spawnCar(state, m, m.vip, 'pelican', 60, 0); say(state, 'NANDO', 'Get a car. I\'m not walking.'); },
           marker: (state, m) => markerAt(m.vip, GREEN, 'NANDO', 30),
           update(state, m) {
             if (m.vip.dead) return '!Nando is dead.';
@@ -415,18 +423,14 @@ export function defineMissions(city) {
             }
           },
         },
-        {
-          objective: 'Escape the police',
-          enter(state) { setWanted(state, 3); say(state, 'RADIO', 'Shots off Harbour Avenue. All units.'); },
-          update(state) { if (state.wanted.level === 0) return 'next'; },
-        },
+        escapeStage(3, 'RADIO', 'Shots off Harbour Avenue. All units.'),
       ],
     },
 
     // =============================================================== DAY 3 — THE HEAT
     {
       id: 'aurelia', day: 3, title: 'THE AURELIA', giver: 'DARIO', start: P.caracol, reward: 3000,
-      briefing: 'Teo Castellan\'s gold Aurelia sits outside his downtown office. Steal it and deliver it to the container lot at the marina with at least 60% of its bodywork — a buyer is waiting.',
+      briefing: 'Teo Castellan\'s gold Aurelia sits outside his downtown office. Steal it and deliver it to the container lot at the marina with at least half its bodywork — a buyer is waiting.',
       dialogue: [
         ['DARIO', 'Teo loves one thing: the Aurelia.'],
         ['DARIO', 'A dent costs you. Drive soft.'],
@@ -450,7 +454,7 @@ export function defineMissions(city) {
           objective: 'Deliver the Aurelia to the container lot', timer: 120,
           marker: () => markerAt(P.containers, Y, 'CONTAINER LOT', 50),
           enter(state) {
-            setWanted(state, 1);
+            setWanted(state, 1, 0, 2);   // capped below the star at which cruisers shoot: the bodywork must survive
             say(state, 'TEO', 'Somebody\'s in my car? Dead.');
           },
           update(state, m) {
@@ -501,6 +505,10 @@ export function defineMissions(city) {
       stages: [
         {
           objective: 'Meet Dario at Muelle Cinco',
+          enter(state) {
+            const p = state.player;
+            if (p.armor < 100) { p.armor = 100; state.notify('Armour vest from Inés', Y); }   // seven guns wait at the pier
+          },
           marker: () => markerAt(P.docks, Y, 'MUELLE CINCO', 50),
           update(state) { if (near(state.player, P.docks, 70)) return 'next'; },
         },
@@ -534,11 +542,7 @@ export function defineMissions(city) {
             if (near(state.player, m.teo, 40)) { state.notify('Harbour ledger taken', GREEN); sfx('pickup', 0.9); return 'next'; }
           },
         },
-        {
-          objective: 'Escape the police',
-          enter(state) { setWanted(state, 2); say(state, 'RADIO', 'Shots at Muelle Cinco. All units.'); },
-          update(state) { if (state.wanted.level === 0) return 'next'; },
-        },
+        escapeStage(2, 'RADIO', 'Shots at Muelle Cinco. All units.'),
       ],
     },
     {
@@ -571,11 +575,7 @@ export function defineMissions(city) {
             }
           },
         },
-        {
-          objective: 'Inés knows — escape with the money',
-          enter(state) { setWanted(state, 3); say(state, 'INES', 'You sold my city, Rio.'); },
-          update(state) { if (state.wanted.level === 0) return 'next'; },
-        },
+        escapeStage(3, 'INES', 'You sold my city, Rio.', 'Inés knows — escape with the money'),
       ],
     },
   ];

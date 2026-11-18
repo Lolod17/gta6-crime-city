@@ -39,10 +39,33 @@ follows with a searchlight; after 19:00 the city sinks into dusk and the streetl
 
 ## Source
 
-`game/src/`: `main.js` loop and state machine · `config.js` every tunable · `city.js` seeded city ·
-`render.js` drawing and effects · `camera.js` · `player.js` · `vehicle.js` car physics ·
-`traffic.js` cars and pedestrians · `police.js` wanted level and pursuit · `missions.js` story ·
-`hud.js` HUD and minimap · `districts.js` district names and taglines · `radio.js` stations · `audio.js` WebAudio synthesis · `persist.js` save/load.
+One job per file under `game/src/`. Each file opens with a `JOB:` line and an `EXPORTS:` line.
+
+| File | Job |
+|---|---|
+| `main.js` | boot, input, the fixed-step loop, the screen state machine |
+| `config.js` | every tunable number |
+| `city.js` | the seeded city as data, with collision and line-of-sight queries |
+| `districts.js` | district names, taglines, the entry banner |
+| `clock.js` | time of day: day start, running clock, HUD text, dusk depth |
+| `render.js` | drawing the world, and particles/decals/floating text |
+| `camera.js` | the follow camera |
+| `player.js` | walking, aiming, shooting, cars in and out, bullets |
+| `vehicle.js` | car models and physics, damage, fire |
+| `traffic.js` | civilian cars, pedestrians, parked cars, pickups |
+| `police.js` | wanted level, pursuit, cops on foot, helicopter |
+| `crew.js` | hostile gunmen on foot |
+| `witnesses.js` | bystanders who phone the PAPD |
+| `racing.js` | checkpoint routes and the rival driver |
+| `jobs.js` | the job runner: stages, briefings, markers, pass/fail |
+| `missions.js` | the twelve story missions (data) |
+| `activities.js` | the three side jobs (data) |
+| `story.js` | cast, days, subtitles, mission unlock order |
+| `shop.js` | Punta Arms, the garage, Paint & Pray |
+| `hud.js` | the HUD and minimap |
+| `radio.js` | the radio station/track line |
+| `audio.js` | WebAudio synthesis |
+| `persist.js` | save/load |
 
 Hand-in: `MAKEFUN_OUTPUT_DIR=out node main.ts`. Decisions are recorded in [NOTES.md](NOTES.md).
 License: MIT.

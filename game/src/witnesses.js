@@ -1,3 +1,6 @@
+// witnesses.js — JOB: bystanders who see the player shoot and phone the PAPD.
+// EXPORTS: witnessShot, updateWitnesses
+//
 // Witnesses: bystanders who see the player fire a gun stop running long enough to phone the PAPD.
 // A call that finishes (the caller is still alive after JOBS.witnessCall seconds) reports the
 // shooting as a crime at the place it happened; shooting the caller first keeps it quiet, at a cost.

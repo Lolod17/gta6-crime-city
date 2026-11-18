@@ -1,3 +1,8 @@
+// render.js — JOB: drawing the world to the canvas, and the particle/decal/floating-text effects the
+//   simulation emits.
+// EXPORTS: createFx, burst, addDecal, floatText, addShake, updateEffects, createRenderer, warmGround,
+//   resizeRenderer, renderFrame
+//
 // Drawing, in order: ground (pre-rendered chunks with roads, lawns, pools, sand, shadows), decals,
 // markers, people, cars, the player, tree canopies, extruded buildings (far to near), particles,
 // the police helicopter, then the golden-hour light. Also owns the effect emitters (particles,
@@ -5,6 +10,7 @@
 import { WORLD, COLORS, CAMERA } from './config.js';
 import { roadCenter, blockStart, BLOCK_SIZE, ROADS_X, ROADS_Y, makeRng } from './city.js';
 import { shakeCamera } from './camera.js';
+import { duskAmount } from './clock.js';
 
 const T = WORLD.tile;
 const CHUNK = 1080;
@@ -336,16 +342,6 @@ export function resizeRenderer(r, w, h) {
   v.addColorStop(0, 'rgba(0,0,0,0)');
   v.addColorStop(1, 'rgba(30,10,40,0.38)');
   r.overlay = g; r.vignette = v;
-}
-
-/** 0 by day, rising from 19:00 to its deepest at 21:00, easing off after 05:00. */
-function duskAmount(state) {
-  if (state.mode === 'title' || state.dayMinute === undefined) return 0;
-  const m = state.dayMinute;
-  if (m >= 19 * 60) return Math.min(1, (m - 19 * 60) / 120) * 0.5;
-  if (m < 5 * 60) return 0.5;
-  if (m < 7 * 60) return (1 - (m - 5 * 60) / 120) * 0.5;
-  return 0;
 }
 
 // ---------------------------------------------------------------- entities

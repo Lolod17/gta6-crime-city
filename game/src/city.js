@@ -1,3 +1,9 @@
+// city.js — JOB: the seeded city as data: tiles, blocks, buildings, named places, and the collision and line-
+//   of-sight queries on it.
+// EXPORTS: T_ROAD, makeRng, roadCenter, blockStart, BLOCK_SIZE, ROADS_X, ROADS_Y, worldToZone, solidsNear,
+//   isBlocked, lineOfSight, segmentHitsRect, segmentEnterRect, nearestNode, kerbPoint, buildCity, T_BLOCK,
+//   T_PARK, T_SAND, T_WATER
+//
 // Seeded procedural city: a 60x60-tile grid of streets every 6 tiles, a downtown of towers, a ring
 // of homes with pools, one park, a marina, a beach and the ocean. Same seed, same city.
 // It only produces data; render.js draws it and the other modules query it for collisions,

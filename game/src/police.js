@@ -1,7 +1,11 @@
+// police.js — JOB: the PAPD: heat and wanted stars, cruisers, cops on foot, the helicopter, and escape.
+// EXPORTS: createWanted, starsFor, evadeTime, reportCrime, addHeat, setWanted, lowerWanted, clearWanted,
+//   updatePolice, dressCop, createHeli, onEjectCop
+//
 // The Puerto Ámbar Police Department: heat and wanted stars, patrol cruisers, pursuit that hunts
 // the player through the street grid and rams, cops on foot who arrest or shoot, a helicopter
 // from four stars, line of sight, and escape: stay out of sight long enough and the stars go.
-import { POLICE, CAR, PLAYER, TRAFFIC } from './config.js';
+import { POLICE, PLAYER, TRAFFIC } from './config.js';
 import { lineOfSight, roadCenter, nearestNode, ROADS_X, ROADS_Y } from './city.js';
 import { createVehicle, forwardSpeed, speedOf } from './vehicle.js';
 import { driveAlongRoads, makePerson, DIRS, validDir, pickTurn, laneX, laneY } from './traffic.js';
@@ -345,4 +349,3 @@ export function onEjectCop(state, ped) {
   if (ped.kind === 'cop') { dressCop(ped); }
 }
 
-export { CAR };

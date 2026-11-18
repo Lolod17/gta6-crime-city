@@ -1,3 +1,6 @@
+// crew.js — JOB: hostile gunmen on foot: spawning a crew, waking it, and its fight behaviour.
+// EXPORTS: openGround, spawnCrew, ring, updateCrew, alive, dismissCrew
+//
 // Hostile crews on foot: the Glasshands and anyone else who shoots back. Used by the warehouse
 // shootout, the protection job, the docks betrayal and the rampage. A crew member wakes when they
 // see the player (or their target) or get shot, then the whole crew joins in: they keep a fighting
@@ -59,12 +62,14 @@ export function updateCrew(state, crew, dt, targets = [], fightFlag = { on: fals
       if (Math.hypot(g.x - p.x, g.y - p.y) > 700) g.remove = true;
       continue;
     }
-    // pick the nearest living target
+    // pick a target: the player, unless a protected person is clearly nearer (by a third). The player
+    // can draw the fire by stepping in; picking strictly the nearest let a squad of three focus the
+    // protection client and kill him in seconds while the player was still closing in
     let tgt = p, d = Math.hypot(p.x - g.x, p.y - g.y);
     for (const t of targets) {
       if (t.dead || t.hidden) continue;
       const dt2 = Math.hypot(t.x - g.x, t.y - g.y);
-      if (dt2 < d) { tgt = t; d = dt2; }
+      if (dt2 < d * 0.66) { tgt = t; d = dt2; }
     }
     const sees = d < GANG.sight && lineOfSight(state.city, g.x, g.y, tgt.x, tgt.y);
     if (sees || g.alert > 0) fightFlag.on = true;
