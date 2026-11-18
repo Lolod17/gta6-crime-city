@@ -43,9 +43,9 @@ export function renderFrame(r, state) {
   drawBlockade(ctx, state, t);
   drawMarkers(ctx, state, t);
   drawPickups(ctx, state, t);
-  drawScenery(ctx, r, cam, t, z);
-  drawActors(ctx, state, t);   // after the buildings, so the far pavement is not painted over
   drawBullets(ctx, state);
+  drawScenery(ctx, r, cam, t, z);
+  drawActors(ctx, state, t);       // after scenery: people on the far pavement are not painted over by buildings
   drawParticles(ctx, state);
   drawHeli(ctx, state, t);
   drawFloatText(ctx, state);

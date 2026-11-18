@@ -201,7 +201,7 @@ function respawn() {
   // a failed job sends the player back to its start marker; otherwise hospital or station
   spawnPlayer(state.respawnPoint || (state.respawnAt === 'station' ? city.places.station : city.places.hospital), true);
   state.respawnPoint = null;
-  topUpCrowd(state);
+  topUpCrowd(state);   // the crowd already alive stays; only the gap to config counts is filled
   if (loss > 0) state.addMoney(-loss);
   if (state.failNote) { state.notify(`Mission failed: ${state.failNote}`, '#ff5a5a'); state.failNote = null; }
   state.onRespawn && state.onRespawn();
