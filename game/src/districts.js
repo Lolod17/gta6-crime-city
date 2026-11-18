@@ -1,6 +1,8 @@
 // districts.js — JOB: district names and taglines, and the banner shown when the player crosses into one.
 // EXPORTS: DISTRICTS, districtAt, updateDistricts, resetDistricts
 // USES: config.js, city.js
+// SPLIT PASS: code unchanged; imported by boot/state.js, boot/loop.js, hud/mission.js after the split; loaded in the
+//   split-pass smoke run with no console errors.
 //
 // The named districts of Puerto Ámbar and their one-line taglines. The city generator tags each
 // block with a kind (city.js district()); this file gives each zone a name for its people and a

@@ -2,6 +2,8 @@
 //   pass and fail.
 // EXPORTS: markerAt, initJobs, objectivePoint, failMission, updateJobs
 // USES: police.js, audio.js, crew.js, story.js, shop.js
+// SPLIT PASS: code unchanged; imported by boot/state.js, boot/loop.js after the split; its imports from police.js now
+//   resolve through that re-export shim; loaded in the split-pass smoke run with no console errors.
 //
 // The job runner: one state machine for story missions (missions.js) and side activities
 // (activities.js). A job has a start marker, a briefing card, stages and a reward. Each stage has an

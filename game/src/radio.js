@@ -1,6 +1,8 @@
 // radio.js — JOB: the radio station and track line the HUD prints, cycling and muting.
 // EXPORTS: STATIONS, createRadio, radioLine, updateRadio, toggleMute
 // USES: config.js
+// SPLIT PASS: code unchanged; imported by boot/state.js, boot/input.js, boot/loop.js, hud/overlays.js after the
+//   split; loaded in the split-pass smoke run with no console errors.
 //
 // Radio Sol 98.7 and its sister stations: a station and a track title for the HUD, cycling every
 // RADIO.trackSeconds of play, muted and unmuted with the radio key, with the mute state kept in the

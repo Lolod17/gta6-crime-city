@@ -2,6 +2,10 @@
 // EXPORTS: STEP, SLOW_FRAME_MS, WORLD, CAMERA, CAR, PLAYER, WEAPONS, WEAPON_ORDER, SHOP, JOBS, TRAFFIC,
 //   POLICE, GANG, HUD, CLOCK, RADIO, AUDIO, COLORS
 // USES: nothing (no imports)
+// SPLIT PASS: fixed the CLOCK.startMinute comment, which pointed at main.js; the +24 lives in clock.js (DAY_OPENS).
+//   Code otherwise unchanged; imported by boot/state.js, boot/loop.js, hud/panels.js, hud/overlays.js,
+//   police/heat.js, police/pursuit.js, traffic/spawn.js, traffic/behaviour.js after the split; loaded in the
+//   split-pass smoke run with no console errors.
 //
 // Every tunable number in one place. Distances are world pixels, times are seconds, speeds px/s.
 // The rest of the game imports from here and hard-codes nothing it might want to tune.
@@ -164,7 +168,7 @@ export const HUD = {
 
 /** The in-game clock: 1 real second = clockMinutes of game time; a day starts at 18:00. */
 export const CLOCK = {
-  startMinute: 18 * 60,  // 18:24 once the opening seconds have run (see main.js)
+  startMinute: 18 * 60,  // 18:24 once the opening seconds have run (see DAY_OPENS in clock.js)
   minutePerSecond: 1,    // one real second advances the clock by one game minute
   dayLength: 24,         // hours on the dial
 };

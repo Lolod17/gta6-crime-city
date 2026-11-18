@@ -2,6 +2,8 @@
 //   the job runner.
 // EXPORTS: defineActivities
 // USES: police.js, audio.js, crew.js, racing.js, vehicle.js, jobs.js
+// SPLIT PASS: code unchanged; imported by boot/state.js after the split; its imports from police.js now resolve
+//   through that re-export shim; loaded in the split-pass smoke run with no console errors.
 //
 // Side activities: three replayable jobs outside the story, each at its own blue marker.
 //   CHECKPOINT SPRINT — a timed run through six checkpoints. Pays by time left; street racing

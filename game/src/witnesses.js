@@ -1,11 +1,14 @@
 // witnesses.js — JOB: bystanders who see the player shoot and phone the PAPD.
 // EXPORTS: witnessShot, updateWitnesses
 // USES: config.js, city.js, render.js
+// SPLIT PASS: the note on fleeing now names traffic/behaviour.js, where that code moved. Code otherwise unchanged;
+//   imported by boot/state.js, boot/loop.js after the split; loaded in the split-pass smoke run with no console
+//   errors.
 //
 // Witnesses: bystanders who see the player fire a gun stop running long enough to phone the PAPD.
 // A call that finishes (the caller is still alive after JOBS.witnessCall seconds) reports the
 // shooting as a crime at the place it happened; shooting the caller first keeps it quiet, at a cost.
-// Pedestrians already flee gunfire and cars in traffic.js; this file only adds the phone call.
+// Pedestrians already flee gunfire and cars in traffic/behaviour.js; this file only adds the phone call.
 import { JOBS } from './config.js';
 import { lineOfSight } from './city.js';
 import { floatText } from './render.js';

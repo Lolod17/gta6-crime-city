@@ -1,6 +1,8 @@
 // crew.js — JOB: hostile gunmen on foot: spawning a crew, waking it, and its fight behaviour.
 // EXPORTS: openGround, spawnCrew, ring, updateCrew, alive, dismissCrew
 // USES: config.js, city.js, traffic.js, player.js, render.js, audio.js
+// SPLIT PASS: code unchanged; its imports from traffic.js now resolve through that re-export shim; loaded in the
+//   split-pass smoke run with no console errors.
 //
 // Hostile crews on foot: the Glasshands and anyone else who shoots back. Used by the warehouse
 // shootout, the protection job, the docks betrayal and the rampage. A crew member wakes when they

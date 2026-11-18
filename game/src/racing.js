@@ -2,6 +2,8 @@
 //   driver.
 // EXPORTS: junctions, routeThrough, createRace, updateRace, createRival, updateRival, rivalProgress
 // USES: city.js, vehicle.js, config.js
+// SPLIT PASS: code unchanged; none of its imports or importers changed in the split; loaded in the split-pass smoke
+//   run with no console errors.
 //
 // Street racing: checkpoint routes laid along the road grid, the checkpoint ring the player must
 // drive through, and a rival driver who runs the same route. Used by the race against Teo Castellan

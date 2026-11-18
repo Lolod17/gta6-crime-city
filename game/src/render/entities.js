@@ -2,6 +2,8 @@
 // EXPORTS: drawMarkers, drawPickups, drawActors, drawBullets, drawHeli
 // USES: draw.js
 // MUST NOT: move, spawn or damage anything; it reads state and draws it.
+// SPLIT PASS: code unchanged; outside render/ it is reached only through render.js, which boot/state.js, boot/loop.js, police/pursuit.js,
+//   traffic/behaviour.js import after the split; loaded in the split-pass smoke run with no console errors.
 import { roundRect, shade, visible } from './draw.js';
 
 function drawCar(ctx, v, t) {

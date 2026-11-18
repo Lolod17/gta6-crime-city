@@ -2,6 +2,8 @@
 // EXPORTS: MODELS, CIVILIAN_MODELS, createVehicle, forwardSpeed, speedOf, updateVehicle, collideWorld,
 //   collideVehicles, damageVehicle, explodeVehicle, isPursuitCar, POLICE_TOP
 // USES: config.js, city.js, render.js, audio.js
+// SPLIT PASS: code unchanged; imported by boot/state.js, boot/loop.js, police/pursuit.js, traffic/spawn.js,
+//   traffic/behaviour.js after the split; loaded in the split-pass smoke run with no console errors.
 //
 // Car physics: throttle, brake and reverse, speed-scaled steering, grip and handbrake drift,
 // circle collisions against buildings, trees, the shore and other cars, damage, fire, explosions.

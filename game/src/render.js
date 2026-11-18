@@ -2,6 +2,8 @@
 // EXPORTS: createFx, burst, addDecal, floatText, addShake, updateEffects, createRenderer, warmGround, resizeRenderer, renderFrame
 // USES: config.js, render/draw.js, render/world.js, render/entities.js, render/fx.js
 // MUST NOT: hold drawing code of its own beyond the pass order and the camera transform (that lives in render/*.js).
+// SPLIT PASS: code unchanged; imported by boot/state.js, boot/loop.js, police/pursuit.js, traffic/behaviour.js after
+//   the split; loaded in the split-pass smoke run with no console errors.
 import { COLORS } from './config.js';
 import { view } from './render/draw.js';
 import { drawGround, drawWater, drawBoats, drawScenery, drawLight } from './render/world.js';

@@ -2,6 +2,9 @@
 // EXPORTS: makeRng, worldToZone, buildCity
 // USES: ../config.js, roads.js, collide.js
 // MUST NOT: draw anything (render/ does) or be called after boot: same seed, same city, built once.
+// SPLIT PASS: code unchanged; outside city/ it is reached only through city.js, which boot/state.js, hud/panels.js, police/heat.js,
+//   police/pursuit.js, traffic/spawn.js, traffic/behaviour.js import after the split; loaded in the split-pass smoke
+//   run with no console errors.
 import { WORLD, COLORS } from '../config.js';
 import { BLOCKS_X, BLOCKS_Y, roadCenter, blockStart, BLOCK_SIZE, layTiles, kerbPoint } from './roads.js';
 import { hashSolids } from './collide.js';

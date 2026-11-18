@@ -2,6 +2,9 @@
 //   and the radio theme.
 // EXPORTS: initAudio, sfx, setListener, updateAudio
 // USES: config.js
+// SPLIT PASS: code unchanged; imported by boot/state.js, boot/input.js, boot/loop.js, police/heat.js,
+//   police/pursuit.js, traffic/behaviour.js after the split; loaded in the split-pass smoke run with no console
+//   errors.
 //
 // WebAudio synthesis, no samples: an engine whose pitch climbs through five gears, the PAPD siren
 // wail (loudest from the nearest cruiser in pursuit), tyre screech, gunshots, crashes, explosions,

@@ -2,6 +2,8 @@
 //   conversion.
 // EXPORTS: createCamera, placeCamera, updateCamera, shakeCamera, toScreen, toWorld
 // USES: config.js
+// SPLIT PASS: code unchanged; imported by boot/state.js, boot/loop.js after the split; loaded in the split-pass smoke
+//   run with no console errors.
 //
 // Smoothed follow camera: leads the player by their velocity, zooms out with speed, never snaps,
 // stays inside the city, and shakes briefly on impacts and gunfire (unless reduced motion is on).

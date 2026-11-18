@@ -3,6 +3,8 @@
 // EXPORTS: createPlayer, updatePlayer, moveCircle, fireWeapon, spawnBullet, updateBullets, tryEnterVehicle,
 //   exitVehicle, seatPlayer, carHitsPeople
 // USES: config.js, city.js, vehicle.js, render.js, audio.js
+// SPLIT PASS: code unchanged; imported by boot/state.js, boot/loop.js, police/pursuit.js, traffic/behaviour.js after
+//   the split; loaded in the split-pass smoke run with no console errors.
 //
 // The player: on-foot movement (walk/sprint), mouse aim, shooting, entering, stealing and leaving
 // cars, and driving with the keyboard. Bullets from anyone are stepped here as well.

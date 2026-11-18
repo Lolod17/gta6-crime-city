@@ -1,6 +1,8 @@
 // missions.js — JOB: the twelve story missions as data for the job runner.
 // EXPORTS: defineMissions
 // USES: config.js, city.js, police.js, traffic.js, player.js, vehicle.js, render.js, audio.js, crew.js, racing.js, story.js, shop.js, jobs.js
+// SPLIT PASS: code unchanged; imported by boot/state.js after the split; its imports from police.js and traffic.js
+//   now resolve through those re-export shims; loaded in the split-pass smoke run with no console errors.
 //
 // The twelve story missions of SUNDOWN: Puerto Ámbar, as a three-day arc for Rio Salcedo.
 //   Day 1 — LEARN THE CITY: Collection, Fragile, The Tail, The Dash

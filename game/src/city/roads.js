@@ -2,6 +2,9 @@
 // EXPORTS: T_ROAD, T_BLOCK, T_PARK, T_SAND, T_WATER, BLOCKS_X, BLOCKS_Y, roadCenter, blockStart, BLOCK_SIZE, ROADS_X, ROADS_Y, layTiles, nearestNode, kerbPoint
 // USES: ../config.js
 // MUST NOT: place buildings, trees or named places (city/blocks.js), or answer collision queries (city/collide.js).
+// SPLIT PASS: code unchanged; outside city/ it is reached only through city.js, which boot/state.js, hud/panels.js, police/heat.js,
+//   police/pursuit.js, traffic/spawn.js, traffic/behaviour.js import after the split; loaded in the split-pass smoke
+//   run with no console errors.
 import { WORLD } from '../config.js';
 
 export const T_ROAD = 1, T_BLOCK = 2, T_PARK = 3, T_SAND = 4, T_WATER = 5;

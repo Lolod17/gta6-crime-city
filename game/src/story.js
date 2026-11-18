@@ -3,6 +3,8 @@
 // EXPORTS: CAST, DAYS, LAST_DAY, say, queueLines, updateDialogue, nextMission, missionsOfDay, storyComplete,
 //   beginDay, completeMission, updateStory, dayLabel
 // USES: audio.js, clock.js
+// SPLIT PASS: code unchanged; imported by boot/state.js after the split; loaded in the split-pass smoke run with no
+//   console errors.
 //
 // The story of SUNDOWN: Puerto Ámbar — the cast, the three days, each day's spoken lines, the
 // subtitle queue, and which mission is unlocked. Missions unlock in order inside a day; the day

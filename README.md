@@ -1,6 +1,7 @@
 <!-- JOB: the project front page: what the game is, how to run and play it.
      EXPORTS: nothing (documentation, rendered by the repository host)
-     USES: nothing (links to screenshots/ and game/) -->
+     USES: nothing (links to screenshots/ and game/)
+     SPLIT PASS: the Source table now lists boot/, hud/, police/ and traffic/ and the shims that front them. -->
 # SUNDOWN: Puerto Ámbar
 
 [![gta6-01](https://make.fun/badge/gta6-01.svg)](https://make.fun/bounty/gta6-01)
@@ -43,11 +44,14 @@ follows with a searchlight; after 19:00 the city sinks into dusk and the streetl
 ## Source
 
 One job per file under `game/src/`. Each file opens with a `JOB:` line and an `EXPORTS:` line; the
-modules under `render/` and `city/` add a `MUST NOT:` line.
+modules under `render/`, `city/`, `boot/`, `hud/`, `police/` and `traffic/` add a `MUST NOT:` line.
 
 | File | Job |
 |---|---|
-| `main.js` | boot, input, the fixed-step loop, the screen state machine |
+| `main.js` | the page's entry module: input, then the loop; the work lives in `boot/` |
+| `boot/state.js` | the shared game state and the screen state machine: title, play, pause, dead, respawn |
+| `boot/input.js` | keyboard and mouse into `state.input`; pause, start and radio-mute keys |
+| `boot/loop.js` | the fixed-step frame loop, timing, density governor, autosave, resize, boot order |
 | `config.js` | every tunable number |
 | `city.js` | public entry for the city: re-exports `city/` |
 | `city/blocks.js` | the seeded generation: blocks, lots, buildings, trees, coast, named places, districts |
@@ -63,8 +67,12 @@ modules under `render/` and `city/` add a `MUST NOT:` line.
 | `camera.js` | the follow camera |
 | `player.js` | walking, aiming, shooting, cars in and out, bullets |
 | `vehicle.js` | car models and physics, damage, fire |
-| `traffic.js` | civilian cars, pedestrians, parked cars, pickups |
-| `police.js` | wanted level, pursuit, cops on foot, helicopter |
+| `traffic.js` | public entry for city life: re-exports `traffic/` |
+| `traffic/spawn.js` | lane geometry, people, parked cars, civilian cars and pedestrians spawned off screen |
+| `traffic/behaviour.js` | lane following and turns, braking, panic, pedestrians walking and fleeing, injuries, pickups |
+| `police.js` | public entry for the PAPD: re-exports `police/` |
+| `police/heat.js` | heat, wanted stars, who can see the player, the evade clock |
+| `police/pursuit.js` | patrol and pursuit cruisers, cops on foot, arrest, the helicopter |
 | `crew.js` | hostile gunmen on foot |
 | `witnesses.js` | bystanders who phone the PAPD |
 | `racing.js` | checkpoint routes and the rival driver |
@@ -73,7 +81,10 @@ modules under `render/` and `city/` add a `MUST NOT:` line.
 | `activities.js` | the three side jobs (data) |
 | `story.js` | cast, days, subtitles, mission unlock order |
 | `shop.js` | Punta Arms, the garage, Paint & Pray |
-| `hud.js` | the HUD and minimap |
+| `hud.js` | public entry for the HUD: `updateHud` runs the parts in order, re-exports `hud/` |
+| `hud/panels.js` | stars, cash, weapon, bars, speedometer, clock, minimap |
+| `hud/mission.js` | mission label, objective, distance, timer |
+| `hud/overlays.js` | notices, radio line, district banner, dialogue, briefing, key hint, centre banners |
 | `radio.js` | the radio station/track line |
 | `audio.js` | WebAudio synthesis |
 | `persist.js` | save/load |

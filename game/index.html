@@ -1,7 +1,8 @@
 <!doctype html>
 <!-- JOB: the page shell: the canvas, the HUD and menu DOM, and their styles.
-     EXPORTS: the DOM elements hud.js and main.js look up by id
-     USES: src/main.js (as an ES module) -->
+     EXPORTS: the DOM elements hud/*.js and boot/state.js look up by id
+     USES: src/main.js (as an ES module)
+     SPLIT PASS: the EXPORTS line now names hud/*.js and boot/state.js, where the id lookups moved; markup unchanged. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">

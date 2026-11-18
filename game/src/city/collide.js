@@ -2,6 +2,9 @@
 // EXPORTS: hashSolids, solidsNear, isBlocked, lineOfSight, segmentHitsRect, segmentEnterRect
 // USES: ../config.js
 // MUST NOT: generate or change the city (except hashSolids filling city.grid once at build time).
+// SPLIT PASS: code unchanged; outside city/ it is reached only through city.js, which boot/state.js, hud/panels.js, police/heat.js,
+//   police/pursuit.js, traffic/spawn.js, traffic/behaviour.js import after the split; loaded in the split-pass smoke
+//   run with no console errors.
 import { WORLD } from '../config.js';
 
 const { tile: T, period: P } = WORLD;

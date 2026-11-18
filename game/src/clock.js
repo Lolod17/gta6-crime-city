@@ -1,8 +1,11 @@
 // clock.js — JOB: the in-game time of day: where each story day's clock starts, how it runs with play,
 // how the HUD prints it, and how deep the dusk is at any minute. Cosmetic only: the simulation never
-// reads it; hud.js prints it and render/world.js grades the city by it.
+// reads it; hud/panels.js prints it and render/world.js grades the city by it.
 // EXPORTS: DAY_OPENS, advanceClock, resetClock, clockParts, duskAmount
 // USES: config.js
+// SPLIT PASS: the job line now names hud/panels.js, which prints the clock since the split. Code otherwise unchanged;
+//   imported by boot/state.js, boot/loop.js, hud/panels.js after the split; loaded in the split-pass smoke run with
+//   no console errors.
 import { CLOCK } from './config.js';
 
 /** Every day of the story opens at dusk, 18:24. */

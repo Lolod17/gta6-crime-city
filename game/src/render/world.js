@@ -2,6 +2,8 @@
 // EXPORTS: createRenderer, warmGround, resizeRenderer, drawGround, drawWater, drawBoats, drawScenery, drawLight
 // USES: ../config.js, ../city.js, ../clock.js, draw.js
 // MUST NOT: draw cars, people, police or effects (render/entities.js, render/fx.js), or change the city data.
+// SPLIT PASS: code unchanged; outside render/ it is reached only through render.js, which boot/state.js, boot/loop.js, police/pursuit.js,
+//   traffic/behaviour.js import after the split; loaded in the split-pass smoke run with no console errors.
 import { WORLD, CAMERA } from '../config.js';
 import { roadCenter, ROADS_X, ROADS_Y } from '../city.js';
 import { duskAmount } from '../clock.js';

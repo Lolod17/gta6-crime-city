@@ -2,6 +2,8 @@
 // EXPORTS: createFx, burst, addDecal, floatText, addShake, updateEffects, drawDecals, drawParticles, drawFloatText
 // USES: ../camera.js, draw.js
 // MUST NOT: decide when an effect happens (callers do) or touch anything but state.fx and the camera shake.
+// SPLIT PASS: code unchanged; outside render/ it is reached only through render.js, which boot/state.js, boot/loop.js, police/pursuit.js,
+//   traffic/behaviour.js import after the split; loaded in the split-pass smoke run with no console errors.
 import { shakeCamera } from '../camera.js';
 import { visible } from './draw.js';
 

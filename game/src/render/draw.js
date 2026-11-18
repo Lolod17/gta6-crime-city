@@ -2,6 +2,8 @@
 // EXPORTS: CHUNK, roundRect, shade, drawGroundInto, drawBuilding, view, visible
 // USES: ../config.js, ../city.js
 // MUST NOT: read game state (player, cars, wanted level) or own any loop; it draws what it is handed.
+// SPLIT PASS: code unchanged; outside render/ it is reached only through render.js, which boot/state.js, boot/loop.js, police/pursuit.js,
+//   traffic/behaviour.js import after the split; loaded in the split-pass smoke run with no console errors.
 import { WORLD, COLORS, CAMERA } from '../config.js';
 import { roadCenter, ROADS_X, ROADS_Y, makeRng } from '../city.js';
 

@@ -1,6 +1,7 @@
 <!-- JOB: the log of design decisions taken while building, with their reasons.
      EXPORTS: nothing (documentation)
-     USES: nothing -->
+     USES: nothing
+     SPLIT PASS: added the "Pass 6" section at the end, which records the main/hud/police/traffic split. -->
 # NOTES — decisions taken while building (no questions asked, conservative choices)
 
 - **Original setting.** The game is *SUNDOWN: Puerto Ámbar*: an invented coastal city, the PAPD,
@@ -113,3 +114,31 @@
   dusk at 21:04 with the streetlamps, and bullets, markers and floating text.
 - **Screenshots** were retaken on this build with the pass-4 sampler: real keyboard and mouse input,
   and a frame is kept only when every layer the scene needs is on screen. Unedited JPEGs from Chrome.
+
+## Pass 6: main, hud, police and traffic split into submodules
+
+- **Moved, not rewritten.** `main.js` (335 lines), `hud.js` (281), `police.js` (352) and
+  `traffic.js` (414) were split by copying line ranges across. The new files are `boot/state.js`,
+  `boot/input.js`, `boot/loop.js`, `hud/panels.js`, `hud/mission.js`, `hud/overlays.js`,
+  `police/heat.js`, `police/pursuit.js`, `traffic/spawn.js` and `traffic/behaviour.js`. The four old
+  files stay as the public entries with the same exports, so no caller changed.
+- **Where a function had to be cut.** `updateHud` became `updatePanels`, `updateMissionHud` and
+  `updateOverlays`, with the same `set` calls, plus `drawMinimap`; `hud.js` keeps the show/hide
+  switch and calls them in that order. The first block of `updatePolice` (star flash, who can see
+  the player, the evade clock and escape) became `updateHeat` in `police/heat.js`, called from the
+  same spot. The input listeners became `bindInput()` and the boot lines became `startLoop()`.
+  `main.js` calls them in the original order.
+- **One duplicate removed.** `main.js` still had `hintFor`, a copy of `hud.js`'s `hintLine` with the
+  same body. The loop now calls `hintLine(state)`.
+- **Placed where the brief did not say.** The clock went to `hud/panels.js` (an always-on panel).
+  The briefing card and key hint went to `hud/overlays.js`. The minimap went to `hud/panels.js`.
+  The lane geometry (`DIRS`, `laneX`, `validDir`, `pickTurn`, the sidewalk loop) went to
+  `traffic/spawn.js`, and `traffic/behaviour.js` imports it from there. The brief listed traffic
+  lights and police roadblocks. The game has neither, and this pass did not add them.
+- **Unused imports dropped** in the moved code: `CAR` and `blockStart` in traffic, and `burst` and
+  `HUD` where the new file no longer uses them.
+- **How sameness was checked.** The same headless-Chrome script ran on the old commit and on this
+  build: start, get in the car, drive, report two crimes, die, respawn, pause and resume. Both reached
+  two stars and spawned cruisers, showed WASTED, respawned with $225 and logged no console errors.
+  Every other file under `game/src/` got a `SPLIT PASS:` header line. It says what changed (three
+  stale comments naming `main.js`, `hud.js` or `traffic.js`) or that nothing did.
