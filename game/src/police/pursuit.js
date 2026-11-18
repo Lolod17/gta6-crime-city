@@ -2,7 +2,12 @@
 //   the grid, cops on foot who dismount, shoot and arrest, the helicopter from four stars, and from four
 //   stars the escalation: roadblocks thrown across the road ahead and spike strips that shred tyres.
 // EXPORTS: updatePolice, dressCop, createHeli, onEjectCop, createBlockade, ESCALATION
-// USES: ../config.js, ../city.js, ../vehicle.js, ../traffic.js, ../player.js, ../render.js, ../audio.js, ./heat.js
+// USES: ../config.js, ../city.js, ../vehicle.js, ../traffic.js, ../player.js, ../render.js, ../audio.js, ./heat.js,
+//   ../heist/alarm.js
+// HEIST PASS: while the bank alarm holds, every cruiser in the city is retasked to the bank's address
+//   (heist/alarm.js alarmAddress) whether or not anybody has seen the player, and the alarm calls in a
+//   cruiser of its own every few seconds, up the roads nearest the bank. Nothing else changes: the stars,
+//   the shooting and the roadblocks are still driven by heat and the four-star escalation.
 // MUST NOT: change heat, stars or the evade clock (that is police/heat.js).
 import { POLICE, PLAYER, TRAFFIC, WORLD } from '../config.js';
 import { roadCenter, nearestNode, ROADS_X, ROADS_Y, isBlocked } from '../city.js';
@@ -12,6 +17,7 @@ import { moveCircle, spawnBullet } from '../player.js';
 import { burst } from '../render.js';
 import { sfx } from '../audio.js';
 import { updateHeat } from './heat.js';
+import { alarmAddress, lockdownRoll, HEIST } from '../heist/alarm.js';
 
 function spawnCruiser(state, pursuing) {
   const p = state.player;
@@ -90,6 +96,33 @@ function copShoot(state, from, x, y, spread) {
   sfx('gunshot', 0.55, x, y);
 }
 
+/**
+ * Call one cruiser in toward a point, on the road nearest it that is off screen from the player: the bank
+ * alarm's reinforcement. Reverse of spawnCruiser's ring pick, in that the junction is chosen for its
+ * distance to the address, not the player. Returns the cruiser, or null when no junction fits.
+ */
+function callInCruiser(state, at) {
+  const rng = state.rng;
+  const p = state.player;
+  for (const spot of lockdownRoll(state, 6)) {
+    const i = spot.i, j = spot.j;
+    const dd = [0, 1, 2, 3].filter((k) => validDir(i, j, k));
+    if (!dd.length) continue;
+    const dir = rng.pick(dd);
+    const x = dir % 2 === 0 ? spot.x : laneX(i, dir), y = dir % 2 === 1 ? spot.y : laneY(j, dir);
+    if (Math.hypot(x - p.x, y - p.y) < 560) continue;
+    if (state.vehicles.some((o) => Math.hypot(o.x - x, o.y - y) < 70)) continue;
+    const v = createVehicle('cruiser', x, y, Math.atan2(DIRS[dir][1], DIRS[dir][0]), rng);
+    v.driver = 'cop';
+    v.siren = true;
+    v.ai = { d: dir, i: i + DIRS[dir][0], j: j + DIRS[dir][1], next: dir, panic: 0, wait: 0, cruise: 200, mode: 'pursue', stuck: 0, reverse: 0, shoot: rng.range(0, 1) };
+    v.ai.next = pickTurn(rng, v.ai.i, v.ai.j, dir);
+    state.vehicles.push(v);
+    return v;
+  }
+  return null;
+}
+
 export function updatePolice(state, dt) {
   const w = state.wanted;
   const p = state.player;
@@ -105,6 +138,17 @@ export function updatePolice(state, dt) {
   const wantCars = Math.round(POLICE.carsPerStar[w.level] * Math.max(0.6, state.density));
   if (w.level > 0 && pursuers < wantCars && state.rng() < (w.seen ? 0.05 : 0.012)) spawnCruiser(state, true);
   if (w.level === 0 && patrols < POLICE.patrolCars && state.rng() < 0.01) spawnCruiser(state, false);
+  // the bank alarm: the whole watch turns toward the bank, seen or not, and a car is called in every few
+  // seconds along the roads nearest it (not on top of the player: the alarm is loud, not telepathic)
+  const alarmAt = alarmAddress(state);
+  if (alarmAt && state.heist) {
+    if (state.time - state.heist.lastReinforce > HEIST.reinforceEvery) {
+      state.heist.lastReinforce = state.time;
+      const spot = callInCruiser(state, alarmAt);
+      if (spot) { state.heist.spawns += 1; state.heist.converged += 1; }
+    }
+    if (state.heist.spawns === 1) state.notify('Every unit is heading to the bank', '#ff5a5a');
+  }
 
   // drive each cruiser
   for (const v of state.vehicles) {
@@ -118,9 +162,16 @@ export function updatePolice(state, dt) {
       const dd = [0, 1, 2, 3].filter((k) => validDir(nd.i, nd.j, k));
       ai.d = dd[0]; ai.next = pickTurn(state.rng, nd.i, nd.j, ai.d);
     }
-    if (ai.mode === 'patrol') { driveAlongRoads(state, v, dt, { speed: 190 }); continue; }
+    if (ai.mode === 'patrol') {
+      // the alarm presses the patrol cars into the chase too: they head for the bank, not for a coffee
+      if (!alarmAt) { driveAlongRoads(state, v, dt, { speed: 190 }); continue; }
+      ai.mode = 'pursue'; v.siren = true;
+    }
     const lead = Math.min(0.8, Math.hypot(p.x - v.x, p.y - v.y) / 700);
-    const tx = w.seen ? p.x + (body.vx || 0) * lead : w.lastX, ty = w.seen ? p.y + (body.vy || 0) * lead : w.lastY;
+    // under the alarm, the target is the bank's address until they see the player again (heat.js sets
+    // w.seen and w.lastX/lastY from whoever has a line of sight, so a sighting takes the target back)
+    let tx = w.seen ? p.x + (body.vx || 0) * lead : w.lastX, ty = w.seen ? p.y + (body.vy || 0) * lead : w.lastY;
+    if (alarmAt && !w.seen) { tx = alarmAt.x; ty = alarmAt.y; }
     steerPursuit(state, v, dt, tx, ty, v.canSee);
     const d = Math.hypot(p.x - v.x, p.y - v.y);
     // dismount next to a player on foot or one who has stopped

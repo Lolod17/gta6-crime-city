@@ -109,6 +109,8 @@ export function updateTraffic(state, dt) {
   for (const ped of state.peds) {
     const d = Math.hypot(ped.x - p.x, ped.y - p.y);
     if (ped.kind === 'civ' && d > TRAFFIC.despawn) continue;
+    // a hired hand is in state.hands (heist/crew.js), but a stray one in the crowd must not be despawned
+    if (ped.kind === 'hand') continue;
     if (ped.dead) { ped.deadTime += dt; if (ped.deadTime > 25 && d > 700) continue; }
     out.push(ped);
     if (ped.dead) { slide(state, ped, dt); continue; }

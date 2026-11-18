@@ -4,6 +4,9 @@
 //   beginDay, completeMission, catchUpDay, updateStory, dayLabel
 // DISTRICT PASS: a fourth day, THE COAST, holds missions 13–15 in Bahía Azul and the Southside port; the
 //   lifeguard Mara joins the cast; catchUpDay moves an old save that finished day 3 on to day 4.
+// HEIST PASS: a fifth day, THE JOB, holds missions 16–18 at the Banco de Ámbar; Sana and Bruno, the two
+//   hired hands, join the cast (heist/crew.js speaks through the same queue); catchUpDay walks an old
+//   save forward one day at a time, so a day-4 save opens on day 5.
 // USES: audio.js, clock.js
 // SPLIT PASS: code unchanged; imported by boot/state.js after the split; loaded in the split-pass smoke run with no
 //   console errors.
@@ -24,6 +27,8 @@ export const CAST = {
   RADIO: { name: 'RADIO', full: 'PAPD dispatch', color: '#9ab8ff' },
   GANG: { name: 'GLASSHAND', full: 'Glasshand crew', color: '#ff6a6a' },
   MARA: { name: 'MARA', full: 'Mara Quintero', color: '#18b6c9', role: 'lifeguard at Bahía Azul, sees every boat come in' },
+  SANA: { name: 'SANA', full: 'Sana Ochoa', color: '#9ad7ff', role: 'hired hand on the Banco de Ámbar job, drives the crew van' },
+  BRUNO: { name: 'BRUNO', full: 'Bruno Mata', color: '#ff9a7a', role: 'hired hand on the Banco de Ámbar job, does the shooting' },
 };
 
 /** The three days. `lines` are spoken once when the day begins: one per character. */
@@ -62,6 +67,15 @@ export const DAYS = [
     ],
     // the player who sold the ledger to the broker hears a colder Inés
     sold: [['INES', 'You sold me out. Earn it back.']],
+  },
+  {
+    title: 'THE JOB',
+    lines: [
+      ['DARIO', 'One bank. One afternoon. Done right.'],
+      ['SANA', 'Sana. I drive, you carry.'],
+      ['BRUNO', 'Bruno. Point me at the police.'],
+    ],
+    sold: [['DARIO', 'No more scraps. A vault this time.']],
   },
 ];
 export const LAST_DAY = DAYS.length - 1;

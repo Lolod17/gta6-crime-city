@@ -5,6 +5,9 @@
 //   shredded tyres shows bare rims and flapping rubber.
 // USES: draw.js
 // MUST NOT: move, spawn or damage anything; it reads state and draws it.
+// HEIST PASS: drawActors also draws state.hands (heist/crew.js Sana and Bruno) through drawHand, which
+//   steps the person a touch larger, rings them in their own colour and draws a health pip under their
+//   feet, so a hired hand reads as a friend on a street full of Glasshands.
 // SPLIT PASS: code unchanged; outside render/ it is reached only through render.js, which boot/state.js, boot/loop.js, police/pursuit.js,
 //   traffic/behaviour.js import after the split; loaded in the split-pass smoke run with no console errors.
 import { roundRect, shade, visible } from './draw.js';
@@ -154,10 +157,40 @@ export function drawPickups(ctx, state, t) {
   }
 }
 
+/**
+ * A hired hand: the person sprite with a ring in the hand's own colour and a health pip on the ground.
+ * Drawn after the crowd so Sana and Bruno are never lost behind a pedestrian; a downed hand gets a dark
+ * ring and no pip.
+ */
+function drawHand(ctx, h, t) {
+  drawPerson(ctx, h, t);
+  const share = Math.max(0, Math.min(1, h.health / h.maxHealth));
+  if (h.dead) {
+    ctx.strokeStyle = 'rgba(40,40,48,0.8)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(h.x, h.y, 13, 0, Math.PI * 2); ctx.stroke();
+    return;
+  }
+  ctx.strokeStyle = h.shirt; ctx.globalAlpha = 0.85; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(h.x, h.y, 13, 0, Math.PI * 2); ctx.stroke();
+  ctx.globalAlpha = 1;
+  // a health pip: a short bar under the feet, green to red, drawn in the hand's colour at the tip
+  const w = 20, x0 = h.x - w / 2, y0 = h.y + 16;
+  ctx.fillStyle = 'rgba(15,10,20,0.7)'; ctx.fillRect(x0 - 1, y0 - 1, w + 2, 5);
+  ctx.fillStyle = share > 0.55 ? '#7dff8a' : share > 0.25 ? '#ffd36b' : '#ff5a5a';
+  ctx.fillRect(x0, y0, w * share, 3);
+  // a small muzzle flash ring while the hand is firing: the pulse reads as "they are shooting"
+  if (h.cooldown !== undefined && h.target && h.mode === 'fight') {
+    ctx.strokeStyle = 'rgba(255,240,170,0.55)'; ctx.lineWidth = 1.5;
+    const r = 15 + (Math.sin(t * 30) * 0.5 + 0.5) * 4;
+    ctx.beginPath(); ctx.arc(h.x, h.y, r, 0, Math.PI * 2); ctx.stroke();
+  }
+}
+
 // people, then cars, then the player
 export function drawActors(ctx, state, t) {
   for (const p of state.peds) if (p.dead && visible(p.x, p.y, 30)) drawPerson(ctx, p, t);
   for (const p of state.peds) if (!p.dead && visible(p.x, p.y, 30)) drawPerson(ctx, p, t);
+  for (const h of state.hands || []) if (visible(h.x, h.y, 40)) drawHand(ctx, h, t);
   for (const v of state.vehicles) if (visible(v.x, v.y, 60)) drawCar(ctx, v, t);
   const pl = state.player;
   if (!pl.car && state.mode !== 'title') {

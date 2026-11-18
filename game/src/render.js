@@ -1,6 +1,9 @@
 // render.js — JOB: the one public entry for drawing: renderFrame runs the passes in order; everything else is re-exported from render/.
 // EXPORTS: createFx, burst, addDecal, floatText, addShake, updateEffects, createRenderer, warmGround, resizeRenderer, renderFrame
-// USES: config.js, render/draw.js, render/world.js, render/entities.js, render/fx.js
+// USES: config.js, render/draw.js, render/world.js, render/entities.js, render/fx.js, heist/route.js
+// HEIST PASS: the getaway line is a pass of its own, drawn after the decals and before the markers so cars
+//   drive over it and the checkpoint rings sit on top; render/entities.js draws the crew indicator over
+//   the hands themselves.
 // MUST NOT: hold drawing code of its own beyond the pass order and the camera transform (that lives in render/*.js).
 // SPLIT PASS: code unchanged; imported by boot/state.js, boot/loop.js, police/pursuit.js, traffic/behaviour.js after
 //   the split; loaded in the split-pass smoke run with no console errors.
@@ -8,6 +11,7 @@ import { COLORS } from './config.js';
 import { view } from './render/draw.js';
 import { drawGround, drawWater, drawBoats, drawPort, drawScenery, drawLight } from './render/world.js';
 import { drawMarkers, drawPickups, drawActors, drawBullets, drawHeli, drawBlockade } from './render/entities.js';
+import { drawRoute } from './heist/route.js';
 import { drawDecals, drawParticles, drawFloatText } from './render/fx.js';
 
 export { createFx, burst, addDecal, floatText, addShake, updateEffects } from './render/fx.js';
@@ -35,6 +39,7 @@ export function renderFrame(r, state) {
   drawBoats(ctx, r, t);
   drawPort(ctx, r, t);
   drawDecals(ctx, state);
+  drawRoute(ctx, state, t);        // the heist getaway line, on the asphalt
   drawBlockade(ctx, state, t);
   drawMarkers(ctx, state, t);
   drawPickups(ctx, state, t);

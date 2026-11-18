@@ -126,8 +126,136 @@ function paintCoast(ctx, city, ox, oy) {
   }
 }
 
+// ---------------------------------------------------------------- the Banco de Ámbar's floor
+
+const MARBLE = '#ece6da', MARBLE_DARK = '#b9b2a4', MARBLE_VEIN = 'rgba(150,148,142,0.35)';
+
+/**
+ * Paint the bank's ground floor into the baked chunk: the marble hall with its border and medallion, the
+ * teller counter's polished top, the vault room's dark concrete, the manager's carpet, the queue rails and
+ * the brass lobby doors. The walls are buildings (city/blocks.js), so they are drawn by drawBuilding over
+ * this floor; the floor only has to read correctly from above between them.
+ */
+function paintBank(ctx, b, rng) {
+  const s = WORLD.sidewalk, d = b.bank;
+  if (!d) return false;
+  const x0 = b.x + s, y0 = b.y + s, size = b.size - 2 * s;
+  // the vault room's floor: sealed concrete, a chequer of steel plates, and the door's threshold
+  const v = d.vault;
+  ctx.fillStyle = '#5f646b'; ctx.fillRect(v.x, v.y, v.w, v.h);
+  ctx.strokeStyle = 'rgba(30,32,36,0.35)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = v.x; x < v.x + v.w; x += 32) { ctx.moveTo(x, v.y); ctx.lineTo(x, v.y + v.h); }
+  for (let y = v.y; y < v.y + v.h; y += 32) { ctx.moveTo(v.x, y); ctx.lineTo(v.x + v.w, y); }
+  ctx.stroke();
+  // the round vault door, set into the counter wall, with its bolts and its handle
+  const vd = d.vaultDoor;
+  ctx.fillStyle = '#3d434a'; ctx.beginPath(); ctx.arc(vd.x, vd.y, vd.r + 5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#7c848c'; ctx.beginPath(); ctx.arc(vd.x, vd.y, vd.r, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#4a5057'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(vd.x, vd.y, vd.r * 0.72, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(vd.x, vd.y, vd.r * 0.42, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = '#2f343a'; ctx.lineWidth = 4;
+  ctx.beginPath();
+  for (let k = 0; k < 8; k += 1) {
+    const a = (k / 8) * Math.PI * 2;
+    ctx.moveTo(vd.x + Math.cos(a) * vd.r * 0.74, vd.y + Math.sin(a) * vd.r * 0.74);
+    ctx.lineTo(vd.x + Math.cos(a) * vd.r * 0.92, vd.y + Math.sin(a) * vd.r * 0.92);
+  }
+  ctx.stroke();
+  ctx.fillStyle = '#c9a53f';
+  ctx.beginPath(); ctx.arc(vd.x, vd.y, vd.r * 0.18, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#5a4a12'; ctx.fillRect(vd.x + vd.r * 0.16, vd.y - 3, vd.r * 0.3, 6);
+  // the teller counter: a polished black top with a brass edge, and the grilles drawn as shops' glass
+  const ct = d.counter;
+  ctx.fillStyle = '#2b2f36'; ctx.fillRect(ct.x, ct.y, ct.w, ct.h);
+  ctx.fillStyle = '#c9a53f'; ctx.fillRect(ct.x, ct.y + ct.h - 3, ct.w, 3);
+  ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fillRect(ct.x + 2, ct.y + 2, ct.w - 4, 3);
+  for (const w of d.windows) {
+    ctx.fillStyle = '#9aa7b0'; ctx.fillRect(w.x, w.y, w.w, w.h);
+    ctx.strokeStyle = '#5a6068'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for (let x = w.x + 4; x < w.x + w.w; x += 6) { ctx.moveTo(x, w.y); ctx.lineTo(x, w.y + w.h); }
+    ctx.stroke();
+    ctx.fillStyle = '#f2c230'; ctx.fillRect(w.x + w.w / 2 - 9, w.y + w.h - 4, 18, 4);
+  }
+  // the marble hall: a field of pale slabs, a darker border, and a compass medallion in the middle
+  const f = d.floor;
+  ctx.fillStyle = MARBLE; ctx.fillRect(f.x, f.y, f.w, f.h);
+  ctx.strokeStyle = 'rgba(170,165,155,0.55)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = f.x; x < f.x + f.w; x += 46) { ctx.moveTo(x, f.y); ctx.lineTo(x, f.y + f.h); }
+  for (let y = f.y; y < f.y + f.h; y += 46) { ctx.moveTo(f.x, y); ctx.lineTo(f.x + f.w, y); }
+  ctx.stroke();
+  // veins in the stone, a few wandering lines
+  ctx.strokeStyle = MARBLE_VEIN; ctx.lineWidth = 1;
+  for (let k = 0; k < 22; k += 1) {
+    let vx = f.x + rng() * f.w, vy = f.y + rng() * f.h;
+    ctx.beginPath(); ctx.moveTo(vx, vy);
+    for (let j = 0; j < 4; j += 1) { vx += rng.range(-18, 18); vy += rng.range(-18, 18); ctx.lineTo(vx, vy); }
+    ctx.stroke();
+  }
+  // the border
+  const bd = d.floor.border;
+  ctx.fillStyle = 'rgba(80,80,88,0.10)';
+  ctx.fillRect(f.x, f.y, f.w, bd); ctx.fillRect(f.x, f.y + f.h - bd, f.w, bd);
+  ctx.fillRect(f.x, f.y, bd, f.h); ctx.fillRect(f.x + f.w - bd, f.y, bd, f.h);
+  ctx.strokeStyle = MARBLE_DARK; ctx.lineWidth = 2;
+  ctx.strokeRect(f.x + bd, f.y + bd, f.w - bd * 2, f.h - bd * 2);
+  // the medallion: two rings, a starburst of marble rays and the bank's monogram in the middle
+  const md = f.medallion;
+  ctx.fillStyle = '#dcd6c8'; ctx.beginPath(); ctx.arc(md.x, md.y, md.r, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#b08b2e'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(md.x, md.y, md.r, 0, Math.PI * 2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(md.x, md.y, md.r * 0.72, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = '#8f7a3a';
+  for (let k = 0; k < 16; k += 1) {
+    const a0 = (k / 16) * Math.PI * 2, a1 = a0 + Math.PI / 16;
+    ctx.beginPath();
+    ctx.moveTo(md.x, md.y);
+    ctx.lineTo(md.x + Math.cos(a0) * md.r * 0.7, md.y + Math.sin(a0) * md.r * 0.7);
+    ctx.lineTo(md.x + Math.cos(a1) * md.r * 0.7, md.y + Math.sin(a1) * md.r * 0.7);
+    ctx.closePath();
+    if (k % 2 === 0) ctx.fill();
+  }
+  ctx.fillStyle = '#2b2f36'; ctx.font = `bold ${Math.round(md.r * 0.5)}px Georgia, serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('BA', md.x, md.y + 1);
+  // runner rugs under the teller windows
+  for (const r of f.rugs) {
+    ctx.fillStyle = '#7a2230'; ctx.fillRect(r.x, r.y, r.w, r.h);
+    ctx.fillStyle = '#a83448'; ctx.fillRect(r.x + 6, r.y + 6, r.w - 12, r.h - 12);
+    ctx.strokeStyle = '#e0c27a'; ctx.lineWidth = 2; ctx.strokeRect(r.x + 12, r.y + 12, r.w - 24, r.h - 24);
+  }
+  // queue rails on the hall floor: brass posts and velvet rope suggested by a thin line
+  for (const q of d.queueRail) {
+    ctx.fillStyle = '#c9a53f'; ctx.fillRect(q.x - 2, q.y, q.w + 4, 5); ctx.fillRect(q.x - 2, q.y + q.h - 5, q.w + 4, 5);
+    ctx.strokeStyle = '#7a1f2a'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(q.x + q.w / 2, q.y + 4); ctx.lineTo(q.x + q.w / 2, q.y + q.h - 4); ctx.stroke();
+  }
+  // the manager's office carpet, under the glass box
+  ctx.fillStyle = '#3f5a46';
+  ctx.fillRect(x0 + size - 140, d.counter.y - 110, 132, 100);
+  ctx.strokeStyle = '#8a9a7a'; ctx.lineWidth = 2; ctx.strokeRect(x0 + size - 134, d.counter.y - 104, 120, 88);
+  // the brass lobby doors on the south pavement, and the dollar sign in the marble in front of them
+  for (const dr of d.doors) {
+    ctx.fillStyle = '#c9a53f'; ctx.fillRect(dr.x - 4, dr.y - 2, dr.w + 8, dr.h + 4);
+    ctx.fillStyle = '#f0e2b0'; ctx.fillRect(dr.x, dr.y, dr.w, dr.h);
+    ctx.strokeStyle = '#8a6f20'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(dr.x + dr.w / 2, dr.y); ctx.lineTo(dr.x + dr.w / 2, dr.y + dr.h); ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(176,139,46,0.55)';
+  ctx.font = 'bold 44px Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('$', x0 + size / 2, y0 + size - 60);
+  // the alarm panel's feed: a red conduit running from the vault wall to the counter
+  const ap = d.alarmPanel;
+  ctx.strokeStyle = 'rgba(200,60,50,0.5)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(ap.x + ap.w / 2, ap.y + ap.h); ctx.lineTo(ap.x + ap.w / 2, ap.y + 40); ctx.lineTo(ap.x + ap.w / 2 + 60, ap.y + 40); ctx.stroke();
+  ctx.fillStyle = '#c0392b'; ctx.fillRect(ap.x, ap.y, ap.w, ap.h);
+  return true;
+}
+
 const DISTRICT_PAINT = {
-  block: (ctx, b, rng) => (b.kind === 'beach' ? paintBeach(ctx, b, rng) : b.kind === 'port' ? paintPort(ctx, b, rng) : false),
+  block: (ctx, b, rng) => (b.kind === 'beach' ? paintBeach(ctx, b, rng) : b.kind === 'port' ? paintPort(ctx, b, rng) : b.kind === 'bank' ? paintBank(ctx, b, rng) : false),
   coast: paintCoast,
 };
 

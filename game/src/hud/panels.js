@@ -1,7 +1,10 @@
 // hud/panels.js — JOB: the always-on HUD panels: wanted stars, cash, weapon and ammo, health/armour/bust
 //   bars, speedometer, clock and the minimap; also the HUD element table and the write-if-changed helper.
-// EXPORTS: initHud, set, updatePanels, drawMinimap
-// USES: ../config.js, ../city.js, ../police.js, ../clock.js, ../shop/weapons.js
+// EXPORTS: initHud, set, updatePanels, drawMinimap, drawHeistPanels
+// USES: ../config.js, ../city.js, ../police.js, ../clock.js, ../shop/weapons.js, ../heist/alarm.js, ../heist/crew.js, ../heist/route.js
+// HEIST PASS: the ALARM clock (#alarm) counts the ninety seconds down under the mission label, the crew
+//   strip (#crewStrip) shows Sana and Bruno's names and health bars, and the minimap draws the getaway
+//   route (heist/route.js drawRouteMinimap) under the markers.
 // DISTRICT PASS: the weapon line names any weapon (it read PISTOL for everything but the SMG), the arsenal
 //   line lists what Armas del Muelle sold you, and the minimap tints the beach and port.
 // MUST NOT: write mission, dialogue, banner, notice or radio text (that is hud/mission.js and hud/overlays.js).
@@ -10,6 +13,9 @@ import { armsOwnedNames } from '../shop/weapons.js';
 import { roadCenter, ROADS_X, ROADS_Y, PORT_Y0 } from '../city.js';
 import { evadeTime } from '../police.js';
 import { clockParts } from '../clock.js';
+import { heistTimerText, heistPhase } from '../heist/alarm.js';
+import { handHealthShare } from '../heist/crew.js';
+import { drawRouteMinimap } from '../heist/route.js';
 
 const $ = (id) => document.getElementById(id);
 const MM_SCALE = 0.09;
@@ -17,7 +23,8 @@ const MM_SCALE = 0.09;
 export function initHud(state) {
   const els = {};
   for (const id of ['hud', 'mlabel', 'distance', 'clock', 'radio', 'locBanner', 'locName', 'locTag', 'money', 'stars', 'weapon', 'hpBar', 'arBar', 'minimap', 'objective', 'timer', 'notices',
-    'dialogue', 'speaker', 'line', 'banner', 'briefing', 'brTitle', 'brGiver', 'brText', 'brReward', 'bannerTitle', 'bannerSub', 'speedo', 'speedVal', 'carName', 'hint', 'status', 'bustBar', 'arsenal', 'counter']) els[id] = $(id);
+    'dialogue', 'speaker', 'line', 'banner', 'briefing', 'brTitle', 'brGiver', 'brText', 'brReward', 'bannerTitle', 'bannerSub', 'speedo', 'speedVal', 'carName', 'hint', 'status', 'bustBar', 'arsenal', 'counter',
+    'alarm', 'crewStrip']) els[id] = $(id);
   const stars = [];
   els.stars.innerHTML = '';
   for (let i = 0; i < POLICE.maxStars; i += 1) {
@@ -146,6 +153,8 @@ export function drawMinimap(state, els) {
     blip(v.x, v.y, 4, state.wanted.level > 0 ? (on ? '#ff3b4a' : '#3b6bff') : '#7aa0ff', true);
   }
   if (state.heli.active) blip(state.heli.x, state.heli.y, 5, '#ffffff', true);
+  // the getaway line, drawn over the map's own base and under the markers: the way out while the alarm holds
+  if (state.heistRoute) drawRouteMinimap(g, state.heistRoute, (x, y) => ({ x: x * s + ox, y: y * s + oy }), S, t);
   // mission markers (clamped to the rim so the way is always shown)
   for (const m of state.fx.markers) {
     const b = blip(m.x, m.y, 6, m.color, true);
@@ -169,4 +178,40 @@ export function drawMinimap(state, els) {
     g.strokeStyle = '#7dff8a'; g.lineWidth = 4;
     g.beginPath(); g.arc(S / 2, S / 2, S / 2 - 8, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2); g.stroke();
   }
+}
+
+/**
+ * The heist's own panels: the alarm clock (the ninety seconds the lockdown gives the player) and the crew
+ * strip (a bar per hired hand, Sana and Bruno). Both are hidden the moment the arc is not running, so a
+ * player who is not on day 5 sees exactly the HUD they had before.
+ */
+export function drawHeistPanels(state, els) {
+  const timer = heistTimerText(state);
+  set(els, 'alarm', timer || '', (v) => {
+    els.alarm.textContent = v;
+    els.alarm.classList.toggle('hidden', !v);
+    els.alarm.classList.toggle('over', heistPhase(state) === 'over');
+  });
+  // the crew strip: one block per hand, hidden when nobody is hired
+  const hands = state.hands || [];
+  const key = hands.map((h) => `${h.name}:${h.dead ? 'x' : Math.round(handHealthShare(h) * 100)}`).join('|');
+  set(els, 'crew', key, () => {
+    els.crewStrip.textContent = '';
+    for (const h of hands) {
+      const row = document.createElement('div');
+      row.className = 'crewRow' + (h.dead ? ' down' : '');
+      const name = document.createElement('b');
+      name.textContent = h.dead ? `${h.name} DOWN` : h.name;
+      name.style.color = h.shirt;
+      const bar = document.createElement('div');
+      bar.className = 'crewBar';
+      const fill = document.createElement('div');
+      fill.style.width = `${Math.round(handHealthShare(h) * 100)}%`;
+      fill.style.background = h.dead ? '#5a5a62' : handHealthShare(h) < 0.3 ? 'linear-gradient(90deg,#ff3b3b,#ff8a3b)' : 'linear-gradient(90deg,#3fd06a,#8dff6a)';
+      bar.appendChild(fill);
+      row.appendChild(name); row.appendChild(bar);
+      els.crewStrip.appendChild(row);
+    }
+    els.crewStrip.classList.toggle('hidden', hands.length === 0);
+  });
 }

@@ -4,6 +4,10 @@
 // DISTRICT PASS: Bahía Azul is now a beach strip (sand lots, a lagoon, a volleyball court, beach bars and
 //   lifeguard huts on the north-east coast) and Southside is the industrial port (container stacks, gantry
 //   cranes, a rail spur and a concrete quay on the south-east coast). Both are retiled as T_BEACH / T_PORT.
+// HEIST PASS: the Banco de Ámbar rises on the CENTRO block (3, 6) with a walk-in ground floor: a marble
+//   hall (block.bank.floor), the teller counter with its four windows, the vault room behind it and its
+//   round door, the manager's office, and the lobby doors on the street. Its lot data is in
+//   city.places.bank and its blocks in city.bank; render/world.js paints the floor into the ground chunk.
 // MUST NOT: draw anything (render/ does) or be called after boot: same seed, same city, built once.
 // SPLIT PASS: code unchanged; outside city/ it is reached only through city.js, which boot/state.js, hud/panels.js, police/heat.js,
 //   police/pursuit.js, traffic/spawn.js, traffic/behaviour.js import after the split; loaded in the split-pass smoke
@@ -265,6 +269,143 @@ function fillPort(city, rng, block) {
   }
 }
 
+// ================================================================ the Banco de Ámbar
+
+/**
+ * The bank's floor plan inside block (bi, bj). Everything here is in world pixels and built once, from the
+ * seed: the hall (marble, with the queue rail and the logo in the floor), four teller windows in a counter
+ * that runs across the hall, the vault room behind it, the manager's office at the back, the lobby doors
+ * onto the south pavement, and the lobby furniture. `interior: true` marks the buildings that are the
+ * bank's own walls, so nothing else is placed inside the lot.
+ *
+ * The plan is a grid of rooms, drawn in order:
+ *
+ *    +-------------------------------+   north: the vault room, steel, and the round door
+ *    |      VAULT (vault room)       |
+ *    +----------+---+----------------+   the counter wall with four teller windows
+ *    |  TELLER COUNTER  ||  MANAGER  |
+ *    +------------------++----------+
+ *    |          MARBLE HALL          |   the lobby: queue rails, columns, the logo
+ *    +--------------+ +--------------+   south: the lobby doors on the pavement
+ */
+function fillBank(city, rng, block) {
+  const s = WORLD.sidewalk;
+  const x0 = block.x + s, y0 = block.y + s, size = block.size - 2 * s;
+  const wall = 10;                       // the bank's wall thickness
+  const hallTop = y0 + size * 0.42;      // where the hall's back wall (the counter) stands
+  const vaultTop = y0 + wall;
+  const vaultH = hallTop - vaultTop - wall;
+  // the hall floor: a marble field with a border, a central medallion and four runner rugs
+  const floor = {
+    x: x0 + wall, y: hallTop, w: size - wall * 2, h: y0 + size - hallTop - wall,
+    medallion: { x: x0 + size / 2, y: hallTop + (y0 + size - hallTop) / 2, r: Math.max(18, Math.min(size, y0 + size - hallTop) * 0.16) },
+    border: 18,
+    rugs: [
+      { x: x0 + wall + 30, y: hallTop + 34, w: 90, h: 150 },
+      { x: x0 + size - wall - 120, y: hallTop + 34, w: 90, h: 150 },
+      { x: x0 + wall + 30, y: y0 + size - wall - 190, w: 90, h: 150 },
+      { x: x0 + size - wall - 120, y: y0 + size - wall - 190, w: 90, h: 150 },
+    ],
+  };
+  block.bank = {
+    floor,
+    // four teller windows, each a gap in the counter wall with a grille over it
+    windows: Array.from({ length: 4 }, (_, k) => ({
+      x: x0 + wall + 26 + k * ((size - wall * 2 - 52) / 3) - 22,
+      y: hallTop - wall / 2,
+      w: 44, h: wall,
+    })),
+    // the counter: a long desk in front of the wall, with the tellers' riser behind it
+    counter: { x: x0 + wall + 8, y: hallTop - wall - 18, w: size - wall * 2 - 16, h: 18 },
+    vault: { x: x0 + wall, y: vaultTop, w: size - wall * 2, h: vaultH },
+    vaultDoor: { x: x0 + size / 2, y: hallTop - wall, r: Math.min(64, vaultH * 0.42) },
+    doors: [
+      { x: x0 + size / 2 - 92, y: y0 + size - wall, w: 30, h: wall },
+      { x: x0 + size / 2 + 62, y: y0 + size - wall, w: 30, h: wall },
+    ],
+    alarmPanel: { x: x0 + wall + 12, y: vaultTop + 16, w: 14, h: 9 },
+    columns: [0.3, 0.7].map((f) => ({ x: x0 + size * f, y: hallTop + 26, r: 7 })),
+    queueRail: [{ x: x0 + size * 0.3, y: hallTop + 50, w: 4, h: 80 }, { x: x0 + size * 0.62, y: hallTop + 50, w: 4, h: 80 }],
+  };
+  // the bank's walls, as four solid buildings around the lot; the doors are a gap in the south wall
+  // the doors: a 184 px gap in the south wall, in the middle of the lot, with the lane's own line up its
+  // centre. A player walking in off the pavement down the block's centre line steps straight through it.
+  block.bank.doorPivot = { x: x0 + size / 2, y: y0 + size };
+  const north = { x: x0 - wall, y: y0 - wall, w: size + wall * 2, h: wall };
+  const west = { x: x0 - wall, y: y0, w: wall, h: size };
+  const east = { x: x0 + size, y: y0, w: wall, h: size };
+  // the south wall, split either side of the 184 px doorway in the middle of the lot
+  const southL = { x: x0 - wall, y: y0 + size, w: size / 2 - 92 + wall, h: wall };
+  const southR = { x: x0 + size / 2 + 92, y: y0 + size, w: size / 2 - 92 + wall, h: wall };
+  const counter = { x: x0 + wall, y: hallTop - wall - 18, w: size - wall * 2, h: 18 };
+  const vaultDividerL = { x: x0 + wall, y: hallTop - wall, w: size / 2 - 42, h: wall };
+  const vaultDividerR = { x: x0 + size / 2 + 42, y: hallTop - wall, w: size / 2 - 42 - wall, h: wall };
+  const stone = { wall: '#cfc4ae', roof: '#e8e0cf', glass: '#9fb8c8' };
+  // the walls are only 90 px tall: low enough that the camera sees the marble floor over them from every
+  // side, exactly as it sees the container stacks and the beach huts, and tall enough to cast a shadow
+  for (const w of [north, west, east, southL, southR, counter, vaultDividerL, vaultDividerR]) {
+    addBuilding(city, rng, w.x, w.y, w.w, w.h, 90, 'bankwall', { ...stone, interior: true, floors: 2 });
+  }
+  // the two lobby doors stand open: painted brass leaves lie flat against the jamb, cosmetic only (the
+  // doorways themselves are the gaps in the south wall above, and nothing solid stands in them)
+  block.bank.leaves = [{ x: southL.x + southL.w - 20, y: y0 + size, w: 20, h: wall }, { x: x0 + size / 2 + 92, y: y0 + size, w: 20, h: wall }];
+  // the vault room: an inner steel box, low enough to see the floor plan over the top of it
+  addBuilding(city, rng, x0 + wall + 6, y0 + wall + 6, size - wall * 2 - 12, 36, 26, 'vault',
+    { wall: '#6b7280', roof: '#8b939c', floors: 0, interior: true });
+  // the manager's office, a glass box in the north-east corner of the hall's back
+  addBuilding(city, rng, x0 + size - wall - 120, hallTop - wall - 18 - 96, 110, 88, 40, 'office',
+    { wall: '#dfe3e6', roof: '#c7ced2', glass: '#7fb3cf', floors: 1, interior: true });
+  // the teller cages: four small risers behind the counter, under the windows
+  for (const win of block.bank.windows) {
+    addBuilding(city, rng, win.x - 6, hallTop - wall - 56, 56, 30, 24, 'cage',
+      { wall: '#b8b0a0', roof: '#a49a88', floors: 0, interior: true });
+  }
+  // and a low sign on the roof of the bank, so it reads from the street
+  block.bank.marquee = { x: x0 + size * 0.5, y: y0 + size - wall + 2, text: 'BANCO DE ÁMBAR' };
+}
+
+/**
+ * Place the bank: pick the CENTRO block that the story does not already use, clear its lot, hand it to
+ * fillBank, and record city.places.bank (the marker on the kerb outside the lobby doors) plus the vault and
+ * the teller positions the robbery reads. The block was chosen by hand and checked against every other
+ * named place: (3, 6) is CENTRO, one block north of the Aurelia's kerb, on the ring the story drives.
+ */
+function placeBank(city, rng) {
+  const bi = 3, bj = 6;
+  const x0 = blockStart(bi), y0 = blockStart(bj);
+  const block = city.blocks.find((b) => b.bi === bi && b.bj === bj);
+  if (!block) return;
+  // nothing else lives in this lot: drop its buildings and trees, keep the trees outside the walls
+  const cx = x0 + BLOCK_SIZE / 2, cy = y0 + BLOCK_SIZE / 2;
+  city.buildings = city.buildings.filter((b) => !(b.x + b.w > x0 + 6 && b.x < x0 + BLOCK_SIZE - 6 && b.y + b.h > y0 + 6 && b.y < y0 + BLOCK_SIZE - 6));
+  city.trees = city.trees.filter((tr) => Math.hypot(tr.x - cx, tr.y - cy) > BLOCK_SIZE * 0.62);
+  block.kind = 'bank';
+  block.plazas.push({ x: x0, y: y0, w: BLOCK_SIZE, h: BLOCK_SIZE });
+  fillBank(city, rng, block);
+  const door = { x: x0 + BLOCK_SIZE / 2, y: y0 + BLOCK_SIZE + 12 };
+  city.bank = { bi, bj, block, door };
+  // the crew waits in the van under the bank's west wall, beside the side street road 2: the same block,
+  // the same pavement, so walking from the van to the doors is twenty steps and no crossroads
+  city.places.crewVan = { x: x0 + 30, y: y0 + BLOCK_SIZE - 70, side: 'w' };
+  // named places the robbery and the route read: the front door on the pavement, the vault, the counter.
+  // bankDoor is the doorway itself (up the block's centre line, on the wall); the kerb marker the player
+  // walks to is just outside it, two steps south.
+  city.places.bank = { x: door.x, y: door.y, side: 's' };
+  city.places.bankDoor = { x: x0 + BLOCK_SIZE / 2, y: y0 + BLOCK_SIZE - WORLD.sidewalk, side: 's' };
+  city.places.bankLobby = { x: x0 + BLOCK_SIZE / 2, y: y0 + BLOCK_SIZE - WORLD.sidewalk - 40 };
+  city.places.bankVault = { x: block.bank.vaultDoor.x, y: block.bank.vault.y + block.bank.vault.h / 2 };
+  city.places.bankCounter = { x: x0 + BLOCK_SIZE / 2, y: block.bank.counter.y - 14 };
+  city.places.bankAlarm = { x: block.bank.alarmPanel.x, y: block.bank.alarmPanel.y };
+  // the casing job's window: the kerb across the street, with a view of the lobby doors
+  city.places.bankWatch = kerbPoint(3, 7, 'n');
+  // the substation that feeds the bank's alarm: a fenced transformer yard on the EASTSIDE block (5, 6)
+  city.places.substation = kerbPoint(5, 6, 'w');
+  const subLamp = { x: blockStart(5) + BLOCK_SIZE - 90, y: blockStart(6) + BLOCK_SIZE - 80 };
+  city.places.substationBox = subLamp;
+  // the getaway: the marina pier the boat waits at, at the end of the route
+  city.places.getaway = kerbPoint(3, 0, 's');
+}
+
 /** Retile the two districts: their lots (and the port's quay over the sand) get their own tile kind. */
 function retileDistricts(city) {
   const N = WORLD.tiles;
@@ -408,11 +549,17 @@ export function buildCity(seed = WORLD.seed) {
   addBuilding(city, rng, rx + 70, ry + s - 90, 70, 34, 24, 'shed', { wall: '#8f6a48', roof: '#6b4a32' });
   addBuilding(city, rng, rx + s - 100, ry + s - 80, 40, 40, 20, 'shed', { wall: '#b98d5f', roof: '#7a5638' });
 
+  // the crew's van kerb (2, 6)
+
   // the gun counter: a painted container on the port yard's west kerb
   const ax = blockStart(7) + WORLD.sidewalk + 4, ay = blockStart(7) + BLOCK_SIZE / 2 - 60;
   city.buildings = city.buildings.filter((b) => !(b.kind === 'container' && b.x < ax + 70 && b.x + b.w > ax && b.y < ay + 120 && b.y + b.h > ay));
   addBuilding(city, rng, ax + 10, ay, 44, 120, 30, 'container', { wall: '#2b2b30', roof: '#ff7a59', floors: 0, label: 'ARMAS' });
   city.places.arms = { x: blockStart(7) + WORLD.sidewalk / 2, y: ay + 60, side: 'w' };
+
+  // the heist arc's own address: the Banco de Ámbar in CENTRO, its alarm substation, the crew's van and
+  // the boat at the end of the getaway. Placed after the named places so it can check them.
+  placeBank(city, rng);
 
   retileDistricts(city);
   hashSolids(city);

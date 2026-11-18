@@ -1,19 +1,27 @@
-// missions.js — JOB: the fifteen story missions as data for the job runner.
+// missions.js — JOB: the eighteen story missions as data for the job runner.
 // EXPORTS: defineMissions
-// USES: config.js, city.js, police.js, traffic.js, player.js, vehicle.js, render.js, audio.js, crew.js, racing.js, story.js, shop.js, jobs.js
+// USES: config.js, city.js, police.js, traffic.js, player.js, vehicle.js, render.js, audio.js, crew.js, racing.js, story.js, shop.js, jobs.js,
+//   heist/alarm.js, heist/crew.js, heist/route.js
 // SPLIT PASS: code unchanged; imported by boot/state.js after the split; its imports from police.js and traffic.js
 //   now resolve through those re-export shims; loaded in the split-pass smoke run with no console errors.
 // DISTRICT PASS: day 4, THE COAST — missions 13–15: SANDTRAP (a chase through Bahía Azul), STACKED (a
 //   shootout in the Southside container yard) and LAST CALL (a timed van run through the port gates).
+// HEIST PASS: day 5, THE JOB — missions 16–18: CASING THE BANCO (watch the bank's doors from across the
+//   street), THE SUBSTATION (cut the feed so the alarm stays quiet) and BANCO DE ÁMBAR (hire the two hands,
+//   clear the hall, drill the vault, then leave by the getaway route inside the alarm's ninety seconds).
+//   The alarm, the hands and the escape line are the new heist/ modules; the bank's floor plan is in
+//   city/blocks.js and its floor is painted by render/world.js.
 //
-// The twelve story missions of SUNDOWN: Puerto Ámbar, as a three-day arc for Rio Salcedo.
+// The eighteen story missions of SUNDOWN: Puerto Ámbar, as a five-day arc for Rio Salcedo.
 //   Day 1 — LEARN THE CITY: Collection, Fragile, The Tail, The Dash
 //   Day 2 — THE CREW:       Three Drops, Street Race, Protection, The Warehouse
 //   Day 3 — THE HEAT:       The Aurelia, Heat, Muelle Cinco, The Ledger
 //   Day 4 — THE COAST:      Sandtrap, Stacked, Last Call
+//   Day 5 — THE JOB:        Casing the Banco, The Substation, Banco de Ámbar
 // Each mission is data for the runner in jobs.js: a giver, a start marker, a briefing, dialogue,
 // a reward, and stages (objective line, timer, markers, fail condition). story.js decides which one
-// is unlocked; crew.js and racing.js supply the gunmen and the rival driver.
+// is unlocked; crew.js and racing.js supply the gunmen and the rival driver, heist/ the alarm, the
+// two hands and the getaway line.
 import { JOBS, WORLD } from './config.js';
 import { lineOfSight, blockStart, BLOCK_SIZE, roadCenter } from './city.js';
 import { setWanted, clearWanted } from './police.js';
@@ -27,6 +35,9 @@ import { junctions, routeThrough, createRace, updateRace, createRival, updateRiv
 import { say } from './story.js';
 import { respray } from './shop.js';
 import { markerAt } from './jobs.js';
+import { HEIST, raiseAlarm, quietAlarm, heistPhase, crewCutShare, alarmTunables } from './heist/alarm.js';
+import { hireHands, updateHands, livingHands, payHands, handsReport } from './heist/crew.js';
+import { planRoute, updateRoute, routeProgress, routeRemaining, routeMarkers, advanceRoute } from './heist/route.js';
 
 const near = (a, b, r) => Math.hypot(a.x - b.x, a.y - b.y) < r;
 const pct = (v, floor) => Math.max(0, Math.round(((v.health - v.maxHealth * floor) / (v.maxHealth * (1 - floor))) * 100));
@@ -777,7 +788,253 @@ export function defineMissions(city) {
         },
       ],
     },
+
+    // =============================================================== DAY 5 — THE JOB
+    // The heist arc. Three missions that build on each other: the casing gives you the bank's routine, the
+    // substation buys you a silent alarm, and the robbery spends both. The alarm, the two hands and the
+    // getaway line live in heist/ and are ticked by jobs.js, so all three missions only describe stages.
+    {
+      id: 'casing', day: 5, title: 'CASING THE BANCO', giver: 'DARIO', start: P.taqueria, reward: HEIST.probeReward,
+      briefing: 'The Banco de Ámbar keeps the west side\'s cash in a room at the back of its marble hall. Before anybody touches it, watch the front doors from across the street and learn the routine: who comes out, when the cruiser passes, how long the guards take.',
+      dialogue: [
+        ['DARIO', 'New job. A bank, not a bar.'],
+        ['RIO', 'Banks have cameras.'],
+        ['DARIO', 'Which is why we watch first.'],
+        ['DARIO', 'Park across the street. Say nothing.'],
+      ],
+      outro: ['DARIO', 'Two guards at nine. The vault at noon.'],
+      stages: [
+        getACar('Get in a car — the bank is in Centro'),
+        {
+          objective: 'Park across from the Banco de Ámbar and watch',
+          timer: 18, survive: true,
+          marker: () => markerAt(P.bankWatch, '#ff9ab0', 'WATCH THE DOORS', 46),
+          enter(state, m) {
+            m.seen = 0;
+            m.guards = 0;
+            say(state, 'DARIO', 'Doors, guards, the cruiser on the corner. Watch.');
+          },
+          update(state, m, dt) {
+            const p = state.player, body = p.car || p;
+            const inView = Math.hypot(body.x - P.bankWatch.x, body.y - P.bankWatch.y) < 260;
+            const still = p.car ? Math.hypot(p.car.vx, p.car.vy) < 40 : true;
+            // the guards come out on a loop: every few seconds one of them walks the pavement
+            m.tick = (m.tick || 0) + dt;
+            if (m.tick > 5.5) { m.tick = 0; m.guards += 1; }
+            if (inView && still) m.seen += dt;
+            m.objectiveOverride = `Watch the doors — ${Math.min(m.guards, 3)}/3 faces counted · keep the car still ${Math.max(0, Math.ceil(m.timer - m.seen > 0 ? m.timer - m.seen : 0))}s`;
+            if (m.seen >= 12) return 'next';
+            if (!inView) m.seen = Math.max(0, m.seen - dt * 0.5);
+            void lineOfSight;
+          },
+        },
+        {
+          objective: 'Get out and look in the lobby windows',
+          marker: () => markerAt(P.bank, '#7dff8a', 'LOBBY DOORS', 30),
+          enter(state) { say(state, 'DARIO', 'Now a walk past. Nothing more.'); },
+          update(state) {
+            if (near(state.player, P.bank, 46)) { state.notify('Marble hall, four windows, one rear door', '#7dff8a'); return 'next'; }
+          },
+        },
+        escapeStage(1, 'DARIO', 'That was the cruiser. Walk away.', 'Get clear of the bank'),
+      ],
+    },
+    {
+      id: 'substation', day: 5, title: 'THE SUBSTATION', giver: 'INES', start: P.taqueria, reward: HEIST.substationReward,
+      briefing: 'The Banco de Ámbar\'s alarm line runs to a transformer yard on the east side. Cut the feed box before Thursday and the vault\'s alarm rings into an empty office instead of the PAPD switchboard. Get in, cut it, get out before a patrol rolls past.',
+      dialogue: [
+        ['INES', 'The alarm line runs east.'],
+        ['RIO', 'Then I cut it east.'],
+        ['INES', 'And if it sings, we\'re done.'],
+      ],
+      outro: ['INES', 'Silent alarm. Thursday we dance.'],
+      stages: [
+        getACar('Get in a car — the substation is on the east side'),
+        {
+          objective: 'Reach the transformer yard',
+          marker: () => markerAt(P.substationBox, '#4fe3ff', 'FEED BOX', 60),
+          enter(state) { say(state, 'INES', 'Fenced yard. Box is on the far wall.'); },
+          update(state) { if (near(state.player, P.substationBox, 120)) return 'next'; },
+        },
+        {
+          objective: 'Cut the bank\'s alarm line', timer: 6, survive: true,
+          marker: () => markerAt(P.substationBox, Y, 'CUT THE LINE', 40),
+          enter(state) { state.notify('Hold the box while the line spins down', Y); },
+          update(state, m) {
+            const p = state.player;
+            if (!near(p, P.substationBox, 60)) return '!You left the feed box.';
+            m.timer = Math.max(0, m.timer);
+            m.objectiveOverride = `Cut the bank's alarm line — ${m.timer.toFixed(1)} s`;
+            if (m.timer <= 0) {
+              // the line is cut: the alarm is quiet for the robbery, and the PAPD hears nothing
+              state.progress.alarmCut = true;
+              state.notify('Alarm line cut — the vault is silent', '#7dff8a');
+              burst(state, 'spark', P.substationBox.x, P.substationBox.y, 14, 1.2);
+              sfx('ping', 1);
+              return 'next';
+            }
+          },
+        },
+        {
+          objective: 'Leave before a patrol turns the corner',
+          marker: () => markerAt(P.substation, '#c38bff', 'GET CLEAR', 60),
+          enter(state) { setWanted(state, 1, 0, 2); say(state, 'RADIO', 'Report of a man at the east transformer yard.'); },
+          update(state) {
+            // the patrol rolls past once the line is cut: lose it, and be somewhere else when you do
+            if (state.wanted.level === 0 && !near(state.player, P.substation, 260)) return 'next';
+          },
+        },
+      ],
+    },
+    {
+      id: 'banco', day: 5, title: 'BANCO DE ÁMBAR', giver: 'DARIO', start: P.bank, reward: HEIST.bankReward,
+      briefing: 'Thursday. The vault is full and, thanks to the substation, its alarm is deaf. Hire Sana and Bruno at the van, walk into the marble hall, put the guards down, drill the vault, and leave by the route Dario has painted on the road. If the alarm does go up you have ninety seconds before the whole city is on the bridge.',
+      dialogue: [
+        ['DARIO', 'The van\'s down the side street.'],
+        ['RIO', 'Two hands, one vault.'],
+        ['DARIO', 'Sana drives. Bruno shoots.'],
+        ['DARIO', 'Do not let the alarm ring twice.'],
+      ],
+      outro: ['DARIO', 'The Banco de Ámbar. Clean. Keep the change.'],
+      stages: [
+        {
+          objective: 'Hire the crew at the van',
+          marker: () => markerAt(P.crewVan, '#9ad7ff', 'THE CREW', 44),
+          enter(state, m) {
+            // the two hands wait by the van. They join the moment the player is close enough to shake hands.
+            m.handsHired = false;
+            m.vanSpot = P.crewVan;
+          },
+          update(state, m) {
+            if (!m.handsHired && near(state.player, P.crewVan, 100)) {
+              // hands are ticked by updateHands in boot/loop.js, not by jobs.js updateCrew: they are not
+              // in state.peds and they are not m.crew, or the hostile-crew stepper would drive them
+              hireHands(state, P.crewVan, { angle: Math.PI * 0.9 });
+              m.handsHired = true;
+              state.notify('Sana and Bruno are with you', '#9ad7ff');
+              sfx('objective', 0.7);
+            }
+            const names = handsReport(state);
+            m.objectiveOverride = m.handsHired
+              ? `Walk the crew into the bank — ${names.join(' · ')}`
+              : 'Hire the crew at the van';
+            if (m.handsHired) {
+              // into the lobby first: that is the doorway the mission means, inside the bank's own block
+              const inside = near(state.player, P.bankLobby, 90) || near(state.player, P.bankDoor, 46);
+              if (inside) return 'next';
+            }
+          },
+        },
+        {
+          objective: 'Clear the marble hall',
+          enter(state, m) {
+            // three guards in the hall, two more behind the counter, and the manager in his glass office
+            const c = P.bankLobby;
+            m.crew.push(...spawnCrew(state, c.x, c.y - 90, [[-70, 30], [70, 30], [0, 90]], { shirt: '#2b3a55', hat: null }));
+            m.crew.push(...spawnCrew(state, c.x - 120, c.y - 170, [[0, 0], [60, 20]], { shirt: '#2b3a55', hat: null }));
+            m.crew.push(...spawnCrew(state, P.bankCounter.x + 90, P.bankCounter.y - 160, [[0, 0]], { shirt: '#4a4a52', hat: null, health: 110 }));
+            state.noGunHeat = true;   // the alarm answers this, not the witness network
+            state.notify('Bank guards — the hall is not empty', RED);
+            say(state, 'DARIO', 'Guards first. Vault second.');
+            m.guardsAt = alive(m.crew);
+          },
+          marker: () => markerAt(P.bankLobby, RED, 'THE HALL', 50),
+          update(state, m) {
+            const left = alive(m.crew);
+            m.objectiveOverride = `Clear the marble hall — ${left} guard${left === 1 ? '' : 's'} left`;
+            if (left === 0) { state.noGunHeat = false; return 'next'; }
+          },
+        },
+        {
+          // the drill runs while the player stands at the door; the clock does not stop for a step away,
+          // it only stops counting down (the objective line says so). 30 s: a person at the door needs 1,
+          // the play-test robot 20 s with the walk up the hall.
+          objective: 'Drill the vault door', timer: 30,
+          timeout: 'The drill was too slow — the PAPD is already inside.',
+          cues: [[18, 'BRUNO', 'Door\'s warm. Keep it turning.'], [8, 'SANA', 'Cruiser on the corner!']],
+          marker: () => markerAt(P.bankVault, Y, 'THE VAULT', 46),
+          enter(state, m) {
+            state.progress.vaultOpen = false;
+            say(state, 'SANA', 'I\'ll watch the doors. You drill.');
+            // the alarm rings either way; the substation job only decides whether it is the branch manager
+            // noticing a silent drill (9 s in) or the vault tripping its own bell at once
+            m.alarmAt = state.progress.alarmCut ? 9 : 4;
+            m.hold = 0;
+          },
+          update(state, m, dt) {
+            // the objective line counts the WALK to the door, so the ring is generous: the vault room is
+            // one corridor about 190 px behind the counter and the door's own stand is 90 px wide
+            const drill = near(state.player, P.bankVault, 170);
+            const at = drill;   // kept as a name for the objective line below
+            // a moment to line up on the door: the drill runs while the player stands there, and the
+            // timer is paused (not reversed) for the step back out of the corridor
+            if (at) m.hold = Math.min(1.2, (m.hold || 0) + dt);
+            m.paused = !at;
+            if (m.alarmAt !== null && m.timer <= m.alarmAt && heistPhase(state) === 'idle') {
+              m.alarmAt = null;
+              raiseAlarm(state, state.progress.alarmCut ? 'the drill woke the branch manager' : 'the alarm tripped on the vault', { bank: P.bank });
+              say(state, 'RADIO', 'Alarm, Banco de Ámbar. All units.');
+              say(state, 'BRUNO', 'That\'s the bell, Rio. Ninety seconds.');
+            }
+            m.objectiveOverride = at
+              ? `Drill the vault — the crew is with you, ${Math.max(0, Math.ceil(m.timer))} s`
+              : `Get to the vault door — the drill waits, ${Math.max(0, Math.ceil(m.timer))} s`;
+            // the drill is done at 4 s and the crew takes the vault from there: the player does not have
+            // to stand in the corridor for the whole timer (the door's own stand is what stops the alarm)
+            if (m.timer <= 4) {
+              const hands = livingHands(state);
+              const take = HEIST.bankReward + hands.length * 500;
+              const paid = payHands(state, take, HEIST.cutPercent);
+              m.take = take;
+              state.heist && (state.heist.take = take);
+              state.addMoney(paid.net, P.bankVault.x, P.bankVault.y - 20);
+              burst(state, 'cash', P.bankVault.x, P.bankVault.y, 16, 1);
+              for (const line of paid.lines) state.notify(line, '#ffd36b');
+              state.notify(`Vault open — the crew takes $${paid.cut.toLocaleString('en-US')} of $${take.toLocaleString('en-US')}`, '#7dff8a');
+              state.progress.vaultOpen = true;
+              sfx('cash', 1);
+              return 'next';
+            }
+          },
+        },
+        {
+          objective: 'Escape with the take',
+          enter(state, m) {
+            // the getaway line: from the bank lobby to the boat at the marina, along the roads
+            state.heistRoute = planRoute(P.bankLobby, P.getaway);
+            m.route = state.heistRoute;
+            if (heistPhase(state) === 'idle') {
+              // a silent drill: the alarm was never raised, so ring it now as the doors open behind you
+              raiseAlarm(state, 'the doors opened onto a waiting cruiser', { bank: P.bank });
+            }
+            say(state, 'SANA', 'Out the back. The line on the road is ours.');
+          },
+          marker: () => routeMarkers(state.heistRoute).filter((mk) => mk.cp === (state.heistRoute.next + 1)),
+          update(state, m) {
+            const r = state.heistRoute;
+            if (!r) return 'next';
+            const ev = updateRoute(state, r, state.player.car || state.player);
+            if (ev === 'checkpoint') { sfx('pickup', 0.6); state.notify('Checkpoint', '#ff9a9a'); }
+            const left = Math.max(0, r.total ? routeRemaining(r, state.player.car || state.player) : 0);
+            const pctDone = Math.round(routeProgress(r, state.player.car || state.player) * 100);
+            m.objectiveOverride = `Escape with the take — checkpoint ${r.next}/${r.checkpoints.length} · ${left} m · ${pctDone}%`;
+            const hands = livingHands(state);
+            if (hands.length === 0 && heistPhase(state) === 'alarm') {
+              // both hands down is still survivable: they will rejoin from the van at the destination
+            }
+            if (ev === 'done') {
+              quietAlarm(state, 'the boat left the pier');
+              return 'next';
+            }
+          },
+        },
+      ],
+    },
   ];
   for (const def of list) def.kind = 'mission';
   return list;
 }
+
+// the heist modules' numbers reach the missions above through HEIST; these two are kept so a play-test can
+// read them from this module too without importing the heist files itself
+export { crewCutShare, alarmTunables };

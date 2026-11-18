@@ -213,6 +213,9 @@ export function drawGroundInto(ctx, city, ox, oy, paint = null) {
   ctx.fillStyle = COLORS.shadow;
   ctx.beginPath();
   for (const b of city.buildings) {
+    // a building marked noShadow stands inside a taller neighbour's shadow (the bank's door leaves): a
+    // cast of its own would black out the doorway it is set in
+    if (b.noShadow) continue;
     const dx = b.height * SUN.x, dy = b.height * SUN.y;
     if (b.x > ox + CHUNK || b.y > oy + CHUNK || b.x + b.w + dx < ox || b.y + b.h + dy < oy) continue;
     ctx.moveTo(b.x, b.y); ctx.lineTo(b.x + b.w, b.y); ctx.lineTo(b.x + b.w + dx, b.y + dy);

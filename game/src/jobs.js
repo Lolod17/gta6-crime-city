@@ -1,7 +1,7 @@
 // jobs.js — JOB: the job runner: one stage machine for story missions and side jobs, with briefings, markers,
 //   pass and fail.
 // EXPORTS: markerAt, initJobs, objectivePoint, failMission, updateJobs
-// USES: police.js, audio.js, crew.js, story.js, shop.js
+// USES: police.js, audio.js, crew.js, story.js, shop.js, heist/alarm.js, heist/crew.js, heist/route.js
 // SPLIT PASS: code unchanged; imported by boot/state.js, boot/loop.js after the split; its imports from police.js now
 //   resolve through that re-export shim; loaded in the split-pass smoke run with no console errors.
 //
@@ -18,6 +18,9 @@ import { sfx } from './audio.js';
 import { updateCrew, dismissCrew } from './crew.js';
 import { CAST, say, updateDialogue, nextMission, completeMission, storyComplete, updateStory } from './story.js';
 import { shopMarkers } from './shop.js';
+import { resetAlarm, heistPhase } from './heist/alarm.js';
+import { dismissHands } from './heist/crew.js';
+import { clearRoute } from './heist/route.js';
 
 const near = (a, b, r) => Math.hypot(a.x - b.x, a.y - b.y) < r;
 const money = (n) => '$' + Math.round(n).toLocaleString('en-US');
@@ -86,6 +89,11 @@ function missionIndex(state, def) {
 
 function startJob(state, def) {
   state.mission = { def, stage: -1, timer: null, entities: [], crew: [], targets: [], fight: { on: false }, objectiveOverride: null };
+  // every job starts from a still world: no bank alarm ringing from the last attempt, no getaway line on
+  // the road, and no hired hands left over from a heist that ended badly.
+  if (heistPhase(state) !== 'idle') resetAlarm(state);
+  clearRoute(state);
+  dismissHands(state);
   state.dialogueQueue = (def.dialogue || []).map(([who, text]) => [CAST[who] ? CAST[who].name : who, text, CAST[who] ? CAST[who].color : '#fff']);
   state.dialogueTimer = 0;
   state.briefing = null;
@@ -109,6 +117,11 @@ function cleanup(state, m) {
   if (m.def.cleanup) m.def.cleanup(state, m);
   for (const e of m.entities) e.mission = false;
   dismissCrew(state, m.crew);
+  // the heist arc's own state: the two hands, the getaway line and any alarm still ringing come off the
+  // road with the job, whichever way it ended (passed, failed, died, busted)
+  dismissHands(state);
+  clearRoute(state);
+  if (heistPhase(state) !== 'idle') resetAlarm(state);
   state.wanted.min = 0;
   state.wanted.max = 5;
   state.noGunHeat = false;
@@ -229,7 +242,9 @@ export function updateJobs(state, dt) {
 
   const st = m.def.stages[m.stage];
   if (m.timer !== null) {
-    m.timer -= dt;
+    // a stage may hold its own clock (the bank drill: it runs while the player is at the vault door and
+    // pauses, never reverses, while they step away)
+    if (!m.paused) m.timer -= dt;
     if (m.timer <= 0 && !st.survive) { failMission(state, st.timeout || 'Out of time.'); return; }
     // cue lines: [seconds left, who, text] spoken once as a timed stage's clock runs down
     for (const cue of st.cues || []) {

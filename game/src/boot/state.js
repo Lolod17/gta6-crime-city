@@ -1,7 +1,7 @@
 // boot/state.js — JOB: the one shared game state, built from the seeded city, and the screen state machine
 //   (title -> play <-> pause, play -> dead -> play) with spawning, dying and respawning.
 // EXPORTS: state, city, canvas, renderer, showTitle, startGame, togglePause, respawn
-// USES: ../config.js, ../city.js, ../render.js, ../camera.js, ../player.js, ../vehicle.js, ../traffic.js, ../police.js, ../jobs.js, ../missions.js, ../activities.js, ../story.js, ../districts.js, ../clock.js, ../radio.js, ../shop.js, ../shop/weapons.js, ../witnesses.js, ../hud.js, ../audio.js, ../persist.js
+// USES: ../config.js, ../city.js, ../render.js, ../camera.js, ../player.js, ../vehicle.js, ../traffic.js, ../police.js, ../jobs.js, ../missions.js, ../activities.js, ../story.js, ../districts.js, ../clock.js, ../radio.js, ../shop.js, ../shop/weapons.js, ../witnesses.js, ../hud.js, ../audio.js, ../persist.js, ../heist/alarm.js, ../heist/route.js
 // MUST NOT: listen to keys or the mouse (boot/input.js) or run the frame loop (boot/loop.js).
 import { WORLD, PLAYER, POLICE } from '../config.js';
 import { buildCity, makeRng, isBlocked } from '../city.js';
@@ -24,6 +24,8 @@ import { witnessShot } from '../witnesses.js';
 import { pushNotice } from '../hud.js';
 import { initAudio, sfx } from '../audio.js';
 import { hasSave, saveGame, loadGame } from '../persist.js';
+import { createHeist, resetAlarm } from '../heist/alarm.js';
+import { clearRoute } from '../heist/route.js';
 
 const params = new URLSearchParams(location.search);
 const seed = Number(params.get('seed')) || WORLD.seed;
@@ -45,6 +47,9 @@ function createState() {
     dialogue: null, banner: null, hint: '', missionView: null, flash: 0, deadTimer: 0, timeScale: 1,
     mission: null,
     loc: { id: null }, locationBanner: null, dayMinute: DAY_OPENS, radio: createRadio(),
+    // the heist arc: the alarm and lockdown (heist/alarm.js), the two hired hands (heist/crew.js) and the
+    // getaway line the route renderer draws (heist/route.js). All three are empty until day 5.
+    heist: createHeist(), hands: [], heistRoute: null,
   };
   s.notify = (text, color) => pushNotice(s, text, color);
   s.crime = (kind, x, y) => { if (s.mode === 'play' && !(kind === 'gunfire' && s.noGunHeat)) reportCrime(s, kind, x, y); };
@@ -187,6 +192,11 @@ function respawn() {
   state.banner = null;
   state.timeScale = 1;
   state.mode = 'play';
+  // a respawn ends any heist that was running: the hands go home, the line comes off the road, the port
+  // gates come back up. The next attempt starts from the bank's marker with a clean alarm.
+  resetAlarm(state);
+  clearRoute(state);
+  state.hands = [];
   if (p.car) { p.car.driver = null; p.car = null; }
   // a failed job sends the player back to its start marker; otherwise hospital or station
   spawnPlayer(state.respawnPoint || (state.respawnAt === 'station' ? city.places.station : city.places.hospital), true);

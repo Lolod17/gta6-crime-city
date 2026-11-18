@@ -115,7 +115,7 @@ function spawnPed(state, minDist = TRAFFIC.spawnMin * 0.8) {
   const rng = state.rng;
   for (let tries = 0; tries < 6; tries += 1) {
     const b = rng.pick(state.city.blocks);
-    if (b.kind === 'yard') continue;
+    if (b.kind === 'yard' || b.kind === 'bank') continue;   // nobody strolls round the bank's marble
     const s = rng.range(0, 4 * BLOCK_SIZE);
     const pt = loopPoint(b, s);
     const d = Math.hypot(pt.x - p.x, pt.y - p.y);
