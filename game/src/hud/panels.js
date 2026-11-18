@@ -97,7 +97,7 @@ export function updatePanels(state, els) {
   }
   set(els, 'speedo', !!p.car, (v) => els.speedo.classList.toggle('hidden', !v));
   const ck = clockParts(state);
-  set(els, 'clock', ck.day + ck.time, () => { els.clock.innerHTML = `<b>${ck.day}</b>${ck.time}`; });
+  set(els, 'clock', ck.day + ' · ' + ck.time, () => { els.clock.innerHTML = `<b>${ck.day}</b> · ${ck.time}`; });
 }
 
 /** The round minimap: landmarks, gang and police blips, mission markers, the player arrow, the evade ring. */
