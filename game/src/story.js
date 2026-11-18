@@ -1,7 +1,9 @@
 // story.js — JOB: the story frame: cast, the three days and their lines, the subtitle queue, and which
 //   mission is unlocked.
 // EXPORTS: CAST, DAYS, LAST_DAY, say, queueLines, updateDialogue, nextMission, missionsOfDay, storyComplete,
-//   beginDay, completeMission, updateStory, dayLabel
+//   beginDay, completeMission, catchUpDay, updateStory, dayLabel
+// DISTRICT PASS: a fourth day, THE COAST, holds missions 13–15 in Bahía Azul and the Southside port; the
+//   lifeguard Mara joins the cast; catchUpDay moves an old save that finished day 3 on to day 4.
 // USES: audio.js, clock.js
 // SPLIT PASS: code unchanged; imported by boot/state.js after the split; loaded in the split-pass smoke run with no
 //   console errors.
@@ -21,6 +23,7 @@ export const CAST = {
   TEO: { name: 'TEO', full: 'Teo Castellan', color: '#ff3d7f', role: 'boss of the Glasshand crew, the rival' },
   RADIO: { name: 'RADIO', full: 'PAPD dispatch', color: '#9ab8ff' },
   GANG: { name: 'GLASSHAND', full: 'Glasshand crew', color: '#ff6a6a' },
+  MARA: { name: 'MARA', full: 'Mara Quintero', color: '#18b6c9', role: 'lifeguard at Bahía Azul, sees every boat come in' },
 };
 
 /** The three days. `lines` are spoken once when the day begins: one per character. */
@@ -49,6 +52,16 @@ export const DAYS = [
       ['DARIO', 'Last day. Then we\'re rich.'],
       ['NANDO', 'Watch Dario. He counts fast.'],
     ],
+  },
+  {
+    title: 'THE COAST',
+    lines: [
+      ['INES', 'Teo\'s gone. His cargo isn\'t.'],
+      ['MARA', 'Glasshands on my beach. Again.'],
+      ['NANDO', 'The port pays. If you\'re fast.'],
+    ],
+    // the player who sold the ledger to the broker hears a colder Inés
+    sold: [['INES', 'You sold me out. Earn it back.']],
   },
 ];
 export const LAST_DAY = DAYS.length - 1;
@@ -96,7 +109,8 @@ export function beginDay(state) {
   if (!d) return;
   state.dayCard = { title: `DAY ${day}`, sub: d.title, life: 4 };
   resetClock(state);   // every day of the story opens at dusk
-  queueLines(state, d.lines);
+  const lines = d.sold && state.progress.ending === 'sold' ? [...d.sold, ...d.lines.filter(([who]) => who !== 'INES')] : d.lines;
+  queueLines(state, lines);
 }
 
 /** Record a finished mission; when it was the day's last, the next day begins. */
@@ -112,6 +126,12 @@ export function completeMission(state, id) {
   }
 }
 
+/** A loaded save whose current day is already finished moves on (old saves ended at day 3). */
+export function catchUpDay(state) {
+  const pr = state.progress;
+  while (pr.day < LAST_DAY && missionsOfDay(state, pr.day).every((d) => pr.done.includes(d.id))) pr.day += 1;
+}
+
 /** Tick the day card and the delayed start of a new day. */
 export function updateStory(state, dt) {
   if (state.pendingDay > 0) {
@@ -124,7 +144,7 @@ export function updateStory(state, dt) {
   }
 }
 
-/** "DAY 2 · THE CREW · 5/12" for the HUD. */
+/** "DAY 4 · THE COAST · 13/15 MISSIONS" for the HUD. */
 export function dayLabel(state) {
   const day = state.progress.day;
   return `DAY ${day} · ${DAYS[day].title} · ${state.progress.done.length}/${state.missionDefs.length} MISSIONS`;

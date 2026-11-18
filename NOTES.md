@@ -1,7 +1,8 @@
 <!-- JOB: the log of design decisions taken while building, with their reasons.
      EXPORTS: nothing (documentation)
      USES: nothing
-     SPLIT PASS: added the "Pass 6" section at the end, which records the main/hud/police/traffic split. -->
+     SPLIT PASS: added the "Pass 6" section at the end, which records the main/hud/police/traffic split.
+     DISTRICT PASS: added the "Pass 7" section: new content, what play-testing changed, how it was verified. -->
 # NOTES — decisions taken while building (no questions asked, conservative choices)
 
 - **Original setting.** The game is *SUNDOWN: Puerto Ámbar*: an invented coastal city, the PAPD,
@@ -142,3 +143,62 @@
   two stars and spawned cruisers, showed WASTED, respawned with $225 and logged no console errors.
   Every other file under `game/src/` got a `SPLIT PASS:` header line. It says what changed (three
   stale comments naming `main.js`, `hud.js` or `traffic.js`) or that nothing did.
+
+## Pass 7: beach and port districts, missions 13–15, roadblocks, a gun counter
+
+New code, not moved code. Every touched file was edited, run in the browser, then edited again.
+
+- **Districts.** I gave `districts.js` names that already existed. BAHÍA AZUL ("the last street
+  before the water") became the beach strip, with a new tagline. SOUTHSIDE ("warehouses...") became
+  the port. Each now lives where its ground is: `worldToZone` checks `districtKind` first, and those
+  two names were taken out of the row table elsewhere, so the banner and the tiles always agree.
+  The beach is blocks (6–7, 0–1) plus the sand beside them. The port is blocks (7,7), (7,8), (7,9)
+  and (6,9) plus a quay over the sand south of road 7. I left (6,8) alone so the police station
+  stays put. New tile kinds are `T_BEACH` and `T_PORT` (`city/roads.js`, with `tileAt` and
+  `TILE_NAMES`). The ground is baked into the same chunks through a painter hook in
+  `drawGroundInto`, so building shadows still fall on it.
+- **What existing places now sit in a district.** COLLECTION's pickup kerb (7,1) is on Bahía Azul's
+  sand, and THE AURELIA's container-lot drop (7,8) is in the port, which fits. The third pier was
+  dropped for the freighter. The bay's boats now keep clear of the freighter's lane.
+- **Sand slows cars** to 70% top speed (`groundSpeed`). I added it after driving onto the beach:
+  without it, sand handled like asphalt.
+- **Missions 13–15** sit on a new day 4, THE COAST (`story.js`), with a new speaker, Mara the
+  lifeguard. The HUD label counts the list, so it reads `/15` without a typed total.
+  `catchUpDay` moves an old save that had finished day 3 on to day 4. If the ledger was sold, day 4
+  opens with a colder line from Inés.
+- **Play-testing changed these numbers:**
+  - SANDTRAP's courier started as a traffic car in a permanent panic. Panic turns off the look-ahead,
+    so he wrecked himself on traffic with nobody near him. He now drives his own lap of the beach
+    district, he shrugs off his own scrapes, and only the player's rams and rounds count. The "lost
+    him" distance (900, then 1100) was shorter than the lap's diagonal (1222 px), so being on the
+    far side of his loop failed the job. It is 1500 now. The bail point went from 35% to 50% of his
+    car left: 35% took about seven clean rams.
+  - LAST CALL's timer went from 95 s to 40 s. The robot driver needed 14 s.
+- **Escalation** (`police/pursuit.js`): roadblocks and spike strips come only from four stars. They
+  are placed at the next junction ahead, 740–1250 px out, which is off screen at every zoom. Each
+  closure ages out after 45 s, when the stars drop, or once it is 1700 px behind. Its parked cruisers
+  and officers go with it, unless an officer has climbed back in to chase. The game keeps
+  `state.blockade` (counts, miss reasons, a log), which the play-test prints. The first test drove
+  through blocks and was stuck most of the time, so few closures fired. On the perimeter roads, 38 s
+  of HEAT gave 1 roadblock, 4 spike strips and 2 tyre hits.
+- **Armas del Muelle** is a new file, `shop/weapons.js`. It registers its three weapons into
+  `WEAPONS`, so number keys 5–7 pick them. The HUD weapon line used to print PISTOL for any weapon
+  that wasn't the SMG, even the bought shotgun and carbine. It now prints the weapon's own name. The
+  counter panel also shows Punta Arms: its `shopView` was built but never drawn. Ammo boxes stop at
+  two full loads, and at the cap the counter no longer takes money for nothing. The save gained
+  `progress.arms` and an `ammo` map; old saves without them still load.
+- **Verified in headless Chrome with real keys and mouse** (`tools/p7_play.mjs`, outside the repo):
+  - I walked from the street into Bahía Azul: banner BAHÍA AZUL, tile `beach-sand`.
+  - I drove to Inés and started COLLECTION (mission 1/15). Its first leg now ends on the beach.
+  - From a day-4 save with $20,000 I bought the revolver and the machine pistol: cash went to
+    $15,600 and the HUD showed `VESPA MP 360` and `ARMAS: REVOLVER · VESPA MP`. I fired three
+    revolver rounds (48 → 45), saved and reloaded, and got both weapons and 45 rounds back.
+  - In HEAT, at four stars, roadblocks and spike strips were logged.
+  - SANDTRAP, STACKED and LAST CALL were each played to MISSION PASSED. LAST CALL also failed on
+    purpose by leaving the van.
+  - Console errors: none.
+  - As in earlier passes, the harness topped up the robot's car and body health (it crashes far
+    more than a person). For the three new missions it also teleported the car to the road beside
+    the start marker, to skip a cross-town drive that tended to collect stars.
+- **Screenshots** were retaken on this build: the port with the cranes and the counter, a
+  four-star roadblock, the beach chase, and the beach strip.

@@ -1,7 +1,7 @@
 // boot/state.js — JOB: the one shared game state, built from the seeded city, and the screen state machine
 //   (title -> play <-> pause, play -> dead -> play) with spawning, dying and respawning.
 // EXPORTS: state, city, canvas, renderer, showTitle, startGame, togglePause, respawn
-// USES: ../config.js, ../city.js, ../render.js, ../camera.js, ../player.js, ../vehicle.js, ../traffic.js, ../police.js, ../jobs.js, ../missions.js, ../activities.js, ../story.js, ../districts.js, ../clock.js, ../radio.js, ../shop.js, ../witnesses.js, ../hud.js, ../audio.js, ../persist.js
+// USES: ../config.js, ../city.js, ../render.js, ../camera.js, ../player.js, ../vehicle.js, ../traffic.js, ../police.js, ../jobs.js, ../missions.js, ../activities.js, ../story.js, ../districts.js, ../clock.js, ../radio.js, ../shop.js, ../shop/weapons.js, ../witnesses.js, ../hud.js, ../audio.js, ../persist.js
 // MUST NOT: listen to keys or the mouse (boot/input.js) or run the frame loop (boot/loop.js).
 import { WORLD, PLAYER, POLICE } from '../config.js';
 import { buildCity, makeRng, isBlocked } from '../city.js';
@@ -14,11 +14,12 @@ import { createWanted, createHeli, reportCrime, clearWanted, onEjectCop } from '
 import { initJobs, failMission } from '../jobs.js';
 import { defineMissions } from '../missions.js';
 import { defineActivities } from '../activities.js';
-import { beginDay } from '../story.js';
+import { beginDay, catchUpDay, LAST_DAY } from '../story.js';
 import { resetDistricts } from '../districts.js';
 import { DAY_OPENS } from '../clock.js';
 import { createRadio, radioLine } from '../radio.js';
 import { restoreOwned } from '../shop.js';
+import { restoreArms } from '../shop/weapons.js';
 import { witnessShot } from '../witnesses.js';
 import { pushNotice } from '../hud.js';
 import { initAudio, sfx } from '../audio.js';
@@ -39,7 +40,7 @@ function createState() {
     vehicles: [], peds: [], bullets: [], pickups: [], fx: createFx(),
     wanted: createWanted(), heli: createHeli(),
     money: 250, stats: { kills: 0, carsStolen: 0, carsWrecked: 0, crashes: 0, shots: 0, escapes: 0, deaths: 0, busts: 0 },
-    progress: { day: 1, done: [], smg: false, owned: {}, ending: null, bests: {} },
+    progress: { day: 1, done: [], smg: false, owned: {}, arms: {}, ending: null, bests: {} },
     input: { keys: new Set(), pressed: new Set(), mouse: { x: 0, y: 0, wx: 0, wy: 0, down: false, clicked: false, active: false } },
     dialogue: null, banner: null, hint: '', missionView: null, flash: 0, deadTimer: 0, timeScale: 1,
     mission: null,
@@ -107,13 +108,15 @@ function startGame(fromSave) {
   initAudio();
   ui.title.classList.add('hidden');
   initJobs(state, defineMissions(city), defineActivities(city));
-  const save = fromSave ? loadGame(state.missionDefs.map((d) => d.id)) : null;
+  const save = fromSave ? loadGame(state.missionDefs.map((d) => d.id), LAST_DAY) : null;
   if (save) {
     state.money = save.money;
     state.progress = { ...state.progress, ...save.progress, day: save.day, done: save.done };
     state.stats = { ...state.stats, ...save.stats };
     if (state.progress.smg) state.player.ammo.smg = Math.max(state.player.ammo.smg, 120);
     restoreOwned(state);
+    restoreArms(state, save.progress.arms, save.ammo);   // bought weapons and the ammo left in each
+    catchUpDay(state);   // a save that finished day 3 before day 4 existed opens on day 4
   }
   state.mode = 'play';
   spawnPlayer(city.places.safehouse, true, state.progress.owned.cometa ? 'cometa' : 'marlin');

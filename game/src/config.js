@@ -107,6 +107,11 @@ export const JOBS = {
   intactShare: 0.5,      // a delivered car must keep this much health (half the bodywork, as FRAGILE)
   fragileShare: 0.5,     // the glassware van
   witnessCall: 2.4,      // seconds a witness spends on the phone before the PAPD hears
+  // day 4, THE COAST (missions.js)
+  chaseLost: 1500,       // SANDTRAP: further than this and he is gone; must exceed the lap diagonal (1222 px)
+  courierBail: 0.5,      // ... and bails out once the player has knocked off half his car (0.35 took ~7 clean rams)
+  courierSpeed: 360,     // ... his top speed in px/s (about 100 km/h), well under the player's 640
+  reeferShare: 0.4,      // LAST CALL: the van must keep this much health or the cargo is ruined
 };
 
 export const TRAFFIC = {

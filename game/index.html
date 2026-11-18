@@ -2,7 +2,9 @@
 <!-- JOB: the page shell: the canvas, the HUD and menu DOM, and their styles.
      EXPORTS: the DOM elements hud/*.js and boot/state.js look up by id
      USES: src/main.js (as an ES module)
-     SPLIT PASS: the EXPORTS line now names hud/*.js and boot/state.js, where the id lookups moved; markup unchanged. -->
+     SPLIT PASS: the EXPORTS line now names hud/*.js and boot/state.js, where the id lookups moved; markup unchanged.
+     DISTRICT PASS: #arsenal (weapons bought at Armas del Muelle) and #counter (the shop panel) with their styles;
+     the canvas label describes the fifteen missions, the districts and the four-star police. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -25,6 +27,17 @@
   #stars span.dim { color: rgba(255,210,63,0.35); -webkit-text-stroke: 1.5px #5a3a00; }
   #money { font-size: 34px; font-weight: 900; color: #7dff8a; margin-top: 4px; letter-spacing: 1px; }
   #weapon { font-size: 15px; font-weight: 800; margin-top: 4px; color: #ffe8b0; letter-spacing: 2px; }
+  #arsenal { font-size: 12px; font-weight: 800; margin-top: 2px; color: #ff9a7a; letter-spacing: 1.5px; }
+  #counter { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -55%); width: min(520px, 70vw); padding: 18px 24px;
+    background: linear-gradient(135deg, rgba(30,30,36,0.94), rgba(70,30,20,0.9)); border-top: 5px solid #ff5a3d; border-radius: 6px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+  .ctTitle { font: italic 900 34px Impact, "Arial Black", sans-serif; letter-spacing: 2px; color: #ff9a7a; }
+  .ctSub { font-size: 14px; font-weight: 800; letter-spacing: 2px; color: #f2c230; margin-bottom: 10px; }
+  .ctRow { display: grid; grid-template-columns: 34px 1fr auto; align-items: baseline; padding: 7px 0; border-top: 1px solid rgba(255,255,255,0.12); }
+  .ctRow b { font-size: 20px; color: #ffcf5a; }
+  .ctName { font-size: 19px; font-weight: 800; }
+  .ctPrice { font-size: 20px; font-weight: 900; color: #7dff8a; }
+  .ctNote { grid-column: 2 / 4; font-size: 14px; font-style: italic; color: #e6d8cc; }
+  .ctRow.owned .ctName::after { content: '  ✓'; color: #7ff0e0; }
   #notices { margin-top: 10px; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
   .notice { font-size: 19px; font-weight: 800; transition: opacity .2s; text-shadow: 0 0 2px #000, 2px 2px 0 #000; }
 
@@ -98,13 +111,14 @@
 </style>
 </head>
 <body>
-<canvas id="game" aria-label="SUNDOWN: Puerto Ámbar, an open-world crime game: drive, steal cars, outrun the police and finish three jobs"></canvas>
+<canvas id="game" aria-label="SUNDOWN: Puerto Ámbar, an open-world crime game: drive, steal cars, outrun roadblocks and spike strips, arm up at the dockside gun counter and finish fifteen story missions from downtown to the beach and the port"></canvas>
 
 <div id="hud" class="hidden">
   <div id="topRight" class="outline">
     <div id="stars"></div>
     <div id="money">$0</div>
     <div id="weapon">PISTOL</div>
+    <div id="arsenal" class="hidden"></div>
     <div id="notices"></div>
   </div>
   <div id="mmWrap">
@@ -127,6 +141,7 @@
   <div id="dialogue" class="outline hidden"><span id="speaker"></span><span id="line"></span></div>
   <div id="hint" class="hidden"></div>
   <div id="briefing" class="hidden"><div id="brTitle"></div><div id="brGiver"></div><div id="brText"></div><div id="brReward"></div><div id="brGo">PRESS ENTER TO START</div></div>
+  <div id="counter" class="outline hidden"></div>
   <div id="banner" class="outline hidden"><div id="bannerTitle"></div><div id="bannerSub"></div></div>
   <div id="speedo" class="outline hidden"><span id="speedVal">0</span><span id="speedUnit">KM/H</span><div id="carName"></div></div>
 </div>
@@ -144,7 +159,7 @@
     <b>F</b><span>steal / enter / exit car</span><b>SHIFT</b><span>sprint</span>
     <b>MOUSE</b><span>aim, click to shoot</span><b>Q</b><span>switch weapon</span>
     <b>H</b><span>horn</span><b>ESC</b><span>pause &amp; save</span>
-    <b>M</b><span>mute radio</span>
+    <b>M</b><span>mute radio</span><b>1 – 7</b><span>pick a weapon</span>
   </div>
 </div>
 

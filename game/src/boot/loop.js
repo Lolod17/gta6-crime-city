@@ -1,7 +1,7 @@
 // boot/loop.js — JOB: the fixed-step frame loop and its timing: stepWorld in the module order, the density
 //   governor, render, HUD and audio each frame, autosave, resize, and the boot sequence that starts it.
 // EXPORTS: startLoop
-// USES: ../config.js, ../render.js, ../camera.js, ../player.js, ../vehicle.js, ../traffic.js, ../police.js, ../jobs.js, ../districts.js, ../clock.js, ../radio.js, ../shop.js, ../witnesses.js, ../hud.js, ../audio.js, ../persist.js, ./state.js
+// USES: ../config.js, ../render.js, ../camera.js, ../player.js, ../vehicle.js, ../traffic.js, ../police.js, ../jobs.js, ../districts.js, ../clock.js, ../radio.js, ../shop.js, ../shop/weapons.js, ../witnesses.js, ../hud.js, ../audio.js, ../persist.js, ./state.js
 // MUST NOT: build state or change screens itself beyond calling respawn when the death timer runs out (boot/state.js).
 import { STEP, SLOW_FRAME_MS } from '../config.js';
 import { resizeRenderer, renderFrame, updateEffects, warmGround } from '../render.js';
@@ -15,6 +15,7 @@ import { updateDistricts } from '../districts.js';
 import { advanceClock } from '../clock.js';
 import { updateRadio } from '../radio.js';
 import { updateShop } from '../shop.js';
+import { updateArms } from '../shop/weapons.js';
 import { updateWitnesses } from '../witnesses.js';
 import { initHud, updateHud, hintLine } from '../hud.js';
 import { updateAudio } from '../audio.js';
@@ -36,11 +37,12 @@ function stepWorld(dt) {
     state.player.x = 2200 + Math.cos(t) * 1100;
     state.player.y = 2100 + Math.sin(t * 1.3) * 1200;
     state.player.vx = -Math.sin(t) * 120; state.player.vy = Math.cos(t * 1.3) * 140;
-  } else if (state.mode === 'play' || state.mode === 'dead' || state.mode === 'mission' || state.mode === 'shop') {
+  } else if (state.mode === 'play' || state.mode === 'dead' || state.mode === 'mission' || state.mode === 'shop' || state.mode === 'arms') {
     if (state.mode === 'play') updatePlayer(state, dt);
     updatePolice(state, dt);
     updateJobs(state, dt);
     updateShop(state);
+    updateArms(state);   // Armas del Muelle, the dockside gun counter
     updateWitnesses(state, dt);
     updateDistricts(state, dt);
     // the clock and the radio run with play; the HUD reads them, the simulation never does

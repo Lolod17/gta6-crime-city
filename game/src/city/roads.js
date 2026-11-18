@@ -1,5 +1,5 @@
 // city/roads.js — JOB: the street grid: tile kinds, where the roads and blocks fall, the tile map, nearest intersection, and kerb points beside a block.
-// EXPORTS: T_ROAD, T_BLOCK, T_PARK, T_SAND, T_WATER, BLOCKS_X, BLOCKS_Y, roadCenter, blockStart, BLOCK_SIZE, ROADS_X, ROADS_Y, layTiles, nearestNode, kerbPoint
+// EXPORTS: T_ROAD, T_BLOCK, T_PARK, T_SAND, T_WATER, T_BEACH, T_PORT, TILE_NAMES, tileAt, groundSpeed, BLOCKS_X, BLOCKS_Y, roadCenter, blockStart, BLOCK_SIZE, ROADS_X, ROADS_Y, layTiles, nearestNode, kerbPoint
 // USES: ../config.js
 // MUST NOT: place buildings, trees or named places (city/blocks.js), or answer collision queries (city/collide.js).
 // SPLIT PASS: code unchanged; outside city/ it is reached only through city.js, which boot/state.js, hud/panels.js, police/heat.js,
@@ -8,6 +8,26 @@
 import { WORLD } from '../config.js';
 
 export const T_ROAD = 1, T_BLOCK = 2, T_PARK = 3, T_SAND = 4, T_WATER = 5;
+/** District ground: the Bahía Azul beach lots and the Southside port's concrete yards and quay. */
+export const T_BEACH = 6, T_PORT = 7;
+/** Readable names per tile kind, for the HUD-less checks and the play-test print. */
+export const TILE_NAMES = ['none', 'road', 'block', 'park', 'sand', 'water', 'beach-sand', 'port-concrete'];
+
+/**
+ * Top-speed factor for a car on this ground: loose sand (the coast strip and Bahía Azul's lots) bogs a
+ * car down to 70%; asphalt, paving, lawns and the port's concrete are full speed.
+ */
+export function groundSpeed(city, x, y) {
+  const t = tileAt(city, x, y);
+  return t === T_SAND || t === T_BEACH ? 0.7 : 1;
+}
+
+/** The tile kind under a world point (off the map reads as water). */
+export function tileAt(city, x, y) {
+  const tx = Math.floor(x / T), ty = Math.floor(y / T);
+  if (tx < 0 || ty < 0 || tx >= N || ty >= N) return T_WATER;
+  return city.tiles[ty * N + tx];
+}
 
 const { tile: T, tiles: N, period: P } = WORLD;
 export const BLOCKS_X = 8;    // city blocks west of the beach

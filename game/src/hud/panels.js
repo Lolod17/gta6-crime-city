@@ -1,10 +1,13 @@
 // hud/panels.js — JOB: the always-on HUD panels: wanted stars, cash, weapon and ammo, health/armour/bust
 //   bars, speedometer, clock and the minimap; also the HUD element table and the write-if-changed helper.
 // EXPORTS: initHud, set, updatePanels, drawMinimap
-// USES: ../config.js, ../city.js, ../police.js, ../clock.js
+// USES: ../config.js, ../city.js, ../police.js, ../clock.js, ../shop/weapons.js
+// DISTRICT PASS: the weapon line names any weapon (it read PISTOL for everything but the SMG), the arsenal
+//   line lists what Armas del Muelle sold you, and the minimap tints the beach and port.
 // MUST NOT: write mission, dialogue, banner, notice or radio text (that is hud/mission.js and hud/overlays.js).
-import { WORLD, POLICE } from '../config.js';
-import { roadCenter, ROADS_X, ROADS_Y } from '../city.js';
+import { WORLD, POLICE, WEAPONS } from '../config.js';
+import { armsOwnedNames } from '../shop/weapons.js';
+import { roadCenter, ROADS_X, ROADS_Y, PORT_Y0 } from '../city.js';
 import { evadeTime } from '../police.js';
 import { clockParts } from '../clock.js';
 
@@ -14,7 +17,7 @@ const MM_SCALE = 0.09;
 export function initHud(state) {
   const els = {};
   for (const id of ['hud', 'mlabel', 'distance', 'clock', 'radio', 'locBanner', 'locName', 'locTag', 'money', 'stars', 'weapon', 'hpBar', 'arBar', 'minimap', 'objective', 'timer', 'notices',
-    'dialogue', 'speaker', 'line', 'banner', 'briefing', 'brTitle', 'brGiver', 'brText', 'brReward', 'bannerTitle', 'bannerSub', 'speedo', 'speedVal', 'carName', 'hint', 'status', 'bustBar']) els[id] = $(id);
+    'dialogue', 'speaker', 'line', 'banner', 'briefing', 'brTitle', 'brGiver', 'brText', 'brReward', 'bannerTitle', 'bannerSub', 'speedo', 'speedVal', 'carName', 'hint', 'status', 'bustBar', 'arsenal', 'counter']) els[id] = $(id);
   const stars = [];
   els.stars.innerHTML = '';
   for (let i = 0; i < POLICE.maxStars; i += 1) {
@@ -40,13 +43,15 @@ function buildMinimapBase(city) {
   g.fillStyle = '#3b3f4a'; g.fillRect(0, 0, c.width, c.height);
   g.fillStyle = '#e3c88f'; g.fillRect(WORLD.beachCol * WORLD.tile * s, 0, c.width, c.height);
   g.fillStyle = '#2a8fb0'; g.fillRect(WORLD.waterCol * WORLD.tile * s, 0, c.width, c.height);
-  const tint = { downtown: '#b9b1a3', commercial: '#a39d92', residential: '#8fb862', park: '#5fa040', marina: '#b0a898', yard: '#a0705a' };
+  const tint = { downtown: '#b9b1a3', commercial: '#a39d92', residential: '#8fb862', park: '#5fa040', marina: '#b0a898', yard: '#a0705a', beach: '#f2dca4', port: '#8e9496' };
+  // the port's quay over the sand
+  g.fillStyle = '#8e9496'; g.fillRect(WORLD.beachCol * WORLD.tile * s, PORT_Y0 * s, (WORLD.waterCol - WORLD.beachCol) * WORLD.tile * s + 2, c.height);
   for (const b of city.blocks) {
     g.fillStyle = tint[b.kind] || '#999';
     g.fillRect(b.x * s, b.y * s, b.size * s, b.size * s);
   }
   for (const b of city.buildings) {
-    g.fillStyle = b.kind === 'tower' ? '#e8e2d6' : b.kind === 'house' ? '#c97a5a' : '#d9d0c0';
+    g.fillStyle = b.kind === 'container' ? b.wall : b.kind === 'tower' ? '#e8e2d6' : b.kind === 'house' ? '#c97a5a' : '#d9d0c0';
     g.fillRect(b.x * s, b.y * s, Math.max(1, b.w * s), Math.max(1, b.h * s));
   }
   g.fillStyle = '#5a5f6c';
@@ -80,8 +85,10 @@ export function updatePanels(state, els) {
   set(els, 'hp', Math.round(p.health), (v) => { els.hpBar.style.width = Math.max(0, v) + '%'; els.hpBar.classList.toggle('low', v < 30); });
   set(els, 'ar', Math.round(p.armor), (v) => { els.arBar.style.width = Math.max(0, v) + '%'; });
   set(els, 'bust', Math.round(p.bust * 20), (v) => { els.bustBar.style.width = Math.min(100, v * 5 / 2.2) + '%'; els.bustBar.parentElement.classList.toggle('hidden', v === 0); });
-  const wname = p.weapon === 'smg' ? 'SMG' : 'PISTOL';
-  set(els, 'weapon', `${wname} ${p.ammo[p.weapon]}`, (v) => { els.weapon.textContent = v; });
+  const wname = (WEAPONS[p.weapon] ? WEAPONS[p.weapon].name : p.weapon).toUpperCase();
+  set(els, 'weapon', `${wname} ${p.ammo[p.weapon] || 0}`, (v) => { els.weapon.textContent = v; });
+  const arsenal = armsOwnedNames(state).join(' · ');
+  set(els, 'arsenal', arsenal, (v) => { els.arsenal.textContent = v ? `ARMAS: ${v}` : ''; els.arsenal.classList.toggle('hidden', !v); });
 
   if (p.car) {
     const kmh = Math.round(Math.hypot(p.car.vx, p.car.vy) * 0.28);

@@ -4,11 +4,12 @@
 // USES: config.js, city.js, render.js, audio.js
 // SPLIT PASS: code unchanged; imported by boot/state.js, boot/loop.js, police/pursuit.js, traffic/spawn.js,
 //   traffic/behaviour.js after the split; loaded in the split-pass smoke run with no console errors.
+// DISTRICT PASS: top speed now also scales with the ground under the car (sand is slow).
 //
 // Car physics: throttle, brake and reverse, speed-scaled steering, grip and handbrake drift,
 // circle collisions against buildings, trees, the shore and other cars, damage, fire, explosions.
 import { CAR, WORLD, POLICE } from './config.js';
-import { solidsNear } from './city.js';
+import { solidsNear, groundSpeed } from './city.js';
 import { burst, addShake, addDecal, floatText } from './render.js';
 import { sfx } from './audio.js';
 
@@ -61,7 +62,8 @@ export function updateVehicle(state, v, dt) {
   const ca = Math.cos(v.a), sa = Math.sin(v.a);
   let vf = v.vx * ca + v.vy * sa;            // forward component
   let vr = -v.vx * sa + v.vy * ca;           // sideways component
-  const top = v.topSpeed * (v.speedMul || 1) * (v.health < CAR.fireAt ? 0.6 : 1);
+  // ground matters: loose sand on the coast and Bahía Azul's lots bogs a car down (city/roads.js groundSpeed)
+  const top = v.topSpeed * (v.speedMul || 1) * (v.health < CAR.fireAt ? 0.6 : 1) * groundSpeed(state.city, v.x, v.y);
 
   if (c.throttle > 0) {
     if (vf < -10) vf += CAR.brake * dt * c.throttle;

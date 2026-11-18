@@ -1,11 +1,12 @@
 // police/pursuit.js — JOB: the PAPD on the street: patrol and pursuit cruisers spawned and steered through
-//   the grid, cops on foot who dismount, shoot and arrest, and the helicopter from four stars.
-// EXPORTS: updatePolice, dressCop, createHeli, onEjectCop
+//   the grid, cops on foot who dismount, shoot and arrest, the helicopter from four stars, and from four
+//   stars the escalation: roadblocks thrown across the road ahead and spike strips that shred tyres.
+// EXPORTS: updatePolice, dressCop, createHeli, onEjectCop, createBlockade, ESCALATION
 // USES: ../config.js, ../city.js, ../vehicle.js, ../traffic.js, ../player.js, ../render.js, ../audio.js, ./heat.js
 // MUST NOT: change heat, stars or the evade clock (that is police/heat.js).
-import { POLICE, PLAYER, TRAFFIC } from '../config.js';
-import { roadCenter, nearestNode, ROADS_X, ROADS_Y } from '../city.js';
-import { createVehicle, forwardSpeed, speedOf } from '../vehicle.js';
+import { POLICE, PLAYER, TRAFFIC, WORLD } from '../config.js';
+import { roadCenter, nearestNode, ROADS_X, ROADS_Y, isBlocked } from '../city.js';
+import { createVehicle, forwardSpeed, speedOf, damageVehicle } from '../vehicle.js';
 import { driveAlongRoads, makePerson, DIRS, validDir, pickTurn, laneX, laneY } from '../traffic.js';
 import { moveCircle, spawnBullet } from '../player.js';
 import { burst } from '../render.js';
@@ -191,6 +192,178 @@ export function updatePolice(state, dt) {
   } else p.bust = Math.max(0, p.bust - dt * 2);
 
   updateHelicopter(state, dt);
+  updateBlockade(state, dt);
+}
+
+// ------------------------------------------------------------------ four stars and up: roadblocks, spikes
+
+/**
+ * Escalation tunables. From `fromStar` stars the PAPD stops only chasing and starts closing roads: every
+ * `cooldown` seconds, while the player drives at speed along a road, it either parks two cruisers across
+ * the road at the next junction ahead (with a spike strip laid on the approach) or lays a spike strip on
+ * its own. Placed beyond the screen edge so nothing pops into view.
+ */
+export const ESCALATION = {
+  fromStar: 4,
+  cooldown: 9,           // seconds between closures
+  firstDelay: 3,         // seconds after reaching four stars before the first one
+  ahead: [740, 1250],    // distance band to the junction that gets closed
+  roadblockLife: 45,
+  spikeLife: 40,
+  flatTime: 22,          // seconds the shredded tyres last (a respray fixes them at once)
+  flatSpeed: 0.55,       // top speed on shredded tyres, fraction of the car's own
+  flatDamage: 0.08,      // bodywork lost to the strip, fraction of max
+  spikeLen: 132,         // the strip spans the road (two lanes, 144 px)
+};
+
+export function createBlockade() {
+  return { roadblocks: [], spikes: [], timer: ESCALATION.firstDelay, made: { roadblocks: 0, spikes: 0, flats: 0 }, miss: { slow: 0, diagonal: 0, offRoad: 0, noJunction: 0 }, log: [] };
+}
+
+/** The next junction along the player's line of travel inside the distance band, or null. */
+function junctionAhead(state) {
+  const car = state.player.car;
+  const miss = state.blockade.miss;
+  if (!car) return null;
+  const sp = speedOf(car);
+  if (sp < 140) { miss.slow += 1; return null; }
+  const hx = car.vx / sp, hy = car.vy / sp;
+  const horiz = Math.abs(hx) > Math.abs(hy);
+  if (Math.max(Math.abs(hx), Math.abs(hy)) < 0.8) { miss.diagonal += 1; return null; }   // cutting across a junction
+  const node = nearestNode(car.x, car.y);
+  // only on a road: within a lane-width of the road's centre line on the cross axis
+  if (horiz ? Math.abs(car.y - node.y) > WORLD.tile : Math.abs(car.x - node.x) > WORLD.tile) { miss.offRoad += 1; return null; }
+  const dir = Math.sign(horiz ? hx : hy);
+  for (let k = 1; k <= 4; k += 1) {
+    const i = horiz ? node.i + dir * k : node.i, j = horiz ? node.j : node.j + dir * k;
+    if (i < 0 || j < 0 || i >= ROADS_X || j >= ROADS_Y) break;
+    const x = roadCenter(i), y = roadCenter(j);
+    const d = Math.hypot(x - car.x, y - car.y);
+    if (d < ESCALATION.ahead[0]) continue;
+    if (d > ESCALATION.ahead[1]) break;
+    return { i, j, x, y, horiz, dir, d };
+  }
+  miss.noJunction += 1;
+  return null;
+}
+
+/** A point `back` px before the junction on the player's side, and the angle across the road. */
+function approachPoint(jn, back) {
+  const x = jn.horiz ? jn.x - jn.dir * back : jn.x;
+  const y = jn.horiz ? jn.y : jn.y - jn.dir * back;
+  return { x, y, across: jn.horiz ? Math.PI / 2 : 0 };
+}
+
+function laySpikes(state, jn, back, withBlock) {
+  const bk = state.blockade;
+  const at = approachPoint(jn, back);
+  bk.spikes.push({ x: at.x, y: at.y, a: at.across, len: ESCALATION.spikeLen, life: ESCALATION.spikeLife, hit: false, roadblock: withBlock });
+  bk.made.spikes += 1;
+  bk.log.push(`t=${state.time.toFixed(1)} spike strip at junction ${jn.i},${jn.j}, ${Math.round(jn.d)} px ahead`);
+}
+
+function throwRoadblock(state, jn) {
+  const bk = state.blockade;
+  const at = approachPoint(jn, WORLD.tile + 34);
+  const cars = [];
+  // two cruisers nose to tail across both lanes, angled into a shallow V
+  for (const side of [-1, 1]) {
+    const off = side * 37;
+    const x = at.x + (jn.horiz ? 0 : off), y = at.y + (jn.horiz ? off : 0);
+    const v = createVehicle('cruiser', x, y, at.across + side * 0.28, state.rng);
+    v.parked = true; v.siren = true; v.roadblock = true;
+    state.vehicles.push(v);
+    cars.push(v);
+  }
+  // two officers behind the cars, already out and armed
+  const cops = [];
+  for (const side of [-1, 1]) {
+    const bx = at.x + (jn.horiz ? jn.dir * 46 : side * 46), by = at.y + (jn.horiz ? side * 46 : jn.dir * 46);
+    if (isBlocked(state.city, bx, by, 10)) continue;
+    const cop = makePerson('cop', bx, by, state.rng);
+    dressCop(cop);
+    cop.car = cars[side < 0 ? 0 : 1];
+    state.peds.push(cop);
+    cops.push(cop);
+  }
+  bk.roadblocks.push({ x: at.x, y: at.y, a: at.across, horiz: jn.horiz, dir: jn.dir, cars, cops, life: ESCALATION.roadblockLife, i: jn.i, j: jn.j });
+  bk.made.roadblocks += 1;
+  bk.log.push(`t=${state.time.toFixed(1)} roadblock: 2 cruisers + ${cops.length} officers across junction ${jn.i},${jn.j}, ${Math.round(jn.d)} px ahead`);
+  // and a spike strip on the approach, so ramming through the gap still costs the tyres
+  laySpikes(state, jn, WORLD.tile + 150, true);
+  state.notify('ROADBLOCK AHEAD', '#ff5a5a');
+  sfx('alert', 0.6);
+}
+
+/** Shredded tyres: a strip under the player's car drops its top speed and pulls the wheel. */
+function checkSpikes(state, dt) {
+  const bk = state.blockade;
+  const car = state.player.car;
+  for (const sp of bk.spikes) {
+    if (sp.hit || !car || car.flat > 0) continue;
+    const dx = car.x - sp.x, dy = car.y - sp.y;
+    const along = dx * Math.cos(sp.a) + dy * Math.sin(sp.a);
+    const across = -dx * Math.sin(sp.a) + dy * Math.cos(sp.a);
+    if (Math.abs(along) < sp.len / 2 + 4 && Math.abs(across) < 12 + car.wid * 0.4) {
+      sp.hit = true;
+      sp.life = Math.min(sp.life, 4);
+      car.flat = ESCALATION.flatTime;
+      car.speedMul = ESCALATION.flatSpeed;
+      damageVehicle(state, car, car.maxHealth * ESCALATION.flatDamage, null);
+      bk.made.flats += 1;
+      bk.log.push(`t=${state.time.toFixed(1)} player hit a spike strip at ${Math.round(speedOf(car) * 0.28)} km/h: top speed x${ESCALATION.flatSpeed} for ${ESCALATION.flatTime}s`);
+      burst(state, 'spark', car.x, car.y, 14, 1.2);
+      sfx('crash', 0.7, car.x, car.y);
+      state.notify('Tyres shredded — spike strip!', '#ff7a7a');
+    }
+  }
+  // running on the rims: slower, sparks, and the wheel pulls
+  for (const v of state.vehicles) {
+    if (!(v.flat > 0)) continue;
+    v.flat -= dt;
+    if (v.driver === 'player') {
+      v.control.steer = Math.max(-1, Math.min(1, v.control.steer + Math.sin(state.time * 7) * 0.22));
+      if (speedOf(v) > 120 && state.rng() < 0.3) burst(state, 'spark', v.x - Math.cos(v.a) * v.len * 0.35, v.y - Math.sin(v.a) * v.len * 0.35, 1, 0.6);
+    }
+    if (v.flat <= 0) {
+      v.flat = 0; v.speedMul = 1;
+      if (v.driver === 'player') state.notify('Run-flats holding — back to speed', '#7fd0ff');
+    }
+  }
+}
+
+function updateBlockade(state, dt) {
+  const bk = state.blockade || (state.blockade = createBlockade());
+  const w = state.wanted;
+  const p = state.player;
+  if (w.level >= ESCALATION.fromStar && state.mode === 'play') {
+    bk.timer -= dt;
+    if (bk.timer <= 0) {
+      const jn = junctionAhead(state);
+      const taken = jn && (bk.roadblocks.some((r) => r.i === jn.i && r.j === jn.j));
+      if (jn && !taken) {
+        // five stars: always a full roadblock; four: a roadblock about half the time, else a lone strip
+        if (w.level >= 5 || state.rng() < 0.55) throwRoadblock(state, jn); else laySpikes(state, jn, WORLD.tile + 60, false);
+        bk.timer = ESCALATION.cooldown;
+      } else bk.timer = 0.5;   // not on a straight road right now: look again shortly
+    }
+  } else bk.timer = Math.max(bk.timer, ESCALATION.firstDelay);
+  checkSpikes(state, dt);
+  // closures age out, stand down with the stars, or are left far behind
+  const keep = (o) => {
+    o.life -= dt;
+    return o.life > 0 && w.level > 0 && Math.hypot(o.x - p.x, o.y - p.y) < 1700;
+  };
+  bk.spikes = bk.spikes.filter(keep);
+  bk.roadblocks = bk.roadblocks.filter((r) => {
+    if (keep(r)) return true;
+    // parked cruisers nobody climbed back into leave with the closure; their officers go too
+    state.vehicles = state.vehicles.filter((v) => !(r.cars.includes(v) && v.driver === null && p.car !== v));
+    for (const c of r.cops) if (c.car && r.cars.includes(c.car) && Math.hypot(c.x - p.x, c.y - p.y) > 700) c.remove = true;
+    state.peds = state.peds.filter((c) => !c.remove);
+    return false;
+  });
+  if (bk.log.length > 40) bk.log.splice(0, bk.log.length - 40);
 }
 
 export function dressCop(c) {

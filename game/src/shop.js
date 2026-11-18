@@ -1,6 +1,7 @@
 // shop.js — JOB: places that take cash: Punta Arms, the safehouse garage and the Paint & Pray respray.
 // EXPORTS: RESPRAY_PRICE, respray, shopMarkers, ownedList, restoreOwned, updateShop
-// USES: config.js, city.js, vehicle.js, police.js, render.js, audio.js
+// USES: config.js, city.js, vehicle.js, police.js, render.js, audio.js, shop/weapons.js
+// DISTRICT PASS: shopMarkers also offers Armas del Muelle (shop/weapons.js); a respray fits new tyres.
 // SPLIT PASS: code unchanged; imported by boot/state.js, boot/loop.js after the split; its imports from police.js now
 //   resolve through that re-export shim; loaded in the split-pass smoke run with no console errors.
 //
@@ -13,6 +14,7 @@ import { createVehicle } from './vehicle.js';
 import { clearWanted } from './police.js';
 import { burst } from './render.js';
 import { sfx } from './audio.js';
+import { armsMarker } from './shop/weapons.js';
 
 export const RESPRAY_PRICE = 250;
 const near = (a, b, r) => Math.hypot(a.x - b.x, a.y - b.y) < r;
@@ -26,6 +28,8 @@ export function respray(state) {
     const colors = ['#ff5a36', '#18b6c9', '#f2f2f2', '#2f2f35', '#e8337a', '#7ad3c8'];
     v.color = colors[(colors.indexOf(v.color) + 1) % colors.length];
     v.health = Math.max(v.health, v.maxHealth * 0.8);
+    // new tyres too: a car that ran over a four-star spike strip leaves at full speed
+    if (v.flat > 0) { v.flat = 0; v.speedMul = 1; }
   }
   burst(state, 'smoke', state.player.x, state.player.y, 14, 1.2);
   sfx('spray', 0.9);
@@ -34,7 +38,7 @@ export function respray(state) {
 /** Ground markers for the shops (shown whenever no job is running). */
 export function shopMarkers(state) {
   const P = state.city.places;
-  const out = [{ x: P.shop.x, y: P.shop.y, r: 36, color: '#ff7a59', label: 'PUNTA ARMS' }];
+  const out = [{ x: P.shop.x, y: P.shop.y, r: 36, color: '#ff7a59', label: 'PUNTA ARMS' }, armsMarker(state)];
   if (state.wanted.level > 0) out.push({ x: P.garage.x, y: P.garage.y, r: 40, color: '#c38bff', label: `RESPRAY ${money(RESPRAY_PRICE)}` });
   return out;
 }

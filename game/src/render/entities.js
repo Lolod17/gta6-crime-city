@@ -1,5 +1,8 @@
 // render/entities.js — JOB: drawing what moves through the city: people, cars, the player and the aim line, bullets, mission markers, pickups, and the police helicopter with its searchlight.
-// EXPORTS: drawMarkers, drawPickups, drawActors, drawBullets, drawHeli
+// EXPORTS: drawMarkers, drawPickups, drawActors, drawBullets, drawHeli, drawBlockade
+// DISTRICT PASS: drawBlockade draws the four-star closures: striped barriers with beacons at a roadblock
+//   and the spike strips (a hinged bar of steel teeth) police/pursuit.js lays across the road; a car on
+//   shredded tyres shows bare rims and flapping rubber.
 // USES: draw.js
 // MUST NOT: move, spawn or damage anything; it reads state and draws it.
 // SPLIT PASS: code unchanged; outside render/ it is reached only through render.js, which boot/state.js, boot/loop.js, police/pursuit.js,
@@ -14,6 +17,16 @@ function drawCar(ctx, v, t) {
   // soft shadow
   ctx.fillStyle = 'rgba(30,15,40,0.35)';
   roundRect(ctx, -L / 2 + 5, -W / 2 + 4, L, W, 7); ctx.fill();
+  // shredded by a spike strip: bare rims and flapping rubber stick out at all four wheels
+  if (v.flat > 0) {
+    for (const [wx, wy] of [[L * 0.3, -W / 2], [L * 0.3, W / 2], [-L * 0.3, -W / 2], [-L * 0.3, W / 2]]) {
+      ctx.fillStyle = '#1b1b1d'; ctx.fillRect(wx - 6, wy - 3, 12, 6);
+      ctx.fillStyle = '#b8bec4'; ctx.fillRect(wx - 3, wy - 1.5, 6, 3);
+      const flap = Math.sin(t * 40 + wx) * 3;
+      ctx.strokeStyle = '#1b1b1d'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(wx - 6, wy); ctx.lineTo(wx - 12, wy + flap + Math.sign(wy) * 3); ctx.stroke();
+    }
+  }
   const dmg = Math.max(0, 1 - v.health / v.maxHealth);
   ctx.fillStyle = v.dead ? '#2a2526' : v.flash > 0 ? '#ffffff' : v.color;
   roundRect(ctx, -L / 2, -W / 2, L, W, 7); ctx.fill();
@@ -163,6 +176,42 @@ export function drawBullets(ctx, state) {
   for (const b of state.bullets) {
     ctx.strokeStyle = b.owner === 'player' ? 'rgba(255,240,170,0.95)' : 'rgba(255,150,120,0.9)';
     ctx.beginPath(); ctx.moveTo(b.x, b.y); ctx.lineTo(b.x - b.vx * 0.022, b.y - b.vy * 0.022); ctx.stroke();
+  }
+}
+
+/** Roadblock barriers and spike strips, drawn on the road under the cars. */
+export function drawBlockade(ctx, state, t) {
+  const bk = state.blockade;
+  if (!bk) return;
+  for (const sp of bk.spikes) {
+    if (!visible(sp.x, sp.y, sp.len)) continue;
+    ctx.save(); ctx.translate(sp.x, sp.y); ctx.rotate(sp.a);
+    ctx.fillStyle = 'rgba(20,10,30,0.35)'; ctx.fillRect(-sp.len / 2 + 3, -3, sp.len, 10);
+    ctx.fillStyle = sp.hit ? '#5a5a5e' : '#2b2b30'; ctx.fillRect(-sp.len / 2, -5, sp.len, 10);
+    ctx.fillStyle = sp.hit ? '#8a8a8e' : '#d8dde2';
+    for (let x = -sp.len / 2 + 4; x < sp.len / 2 - 4; x += 8) {
+      ctx.beginPath(); ctx.moveTo(x, -5); ctx.lineTo(x + 4, -11); ctx.lineTo(x + 8, -5); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x, 5); ctx.lineTo(x + 4, 11); ctx.lineTo(x + 8, 5); ctx.closePath(); ctx.fill();
+    }
+    // hinge joints
+    ctx.fillStyle = '#f2c230';
+    for (let x = -sp.len / 2 + 22; x < sp.len / 2; x += 44) ctx.fillRect(x - 2, -5, 4, 10);
+    ctx.restore();
+  }
+  for (const r of bk.roadblocks) {
+    if (!visible(r.x, r.y, 200)) continue;
+    // a sawhorse barrier at each kerb, beyond the cruisers' bumpers
+    for (const side of [-1, 1]) {
+      const bx = r.x + (r.horiz ? 0 : side * 66), by = r.y + (r.horiz ? side * 66 : 0);
+      ctx.save(); ctx.translate(bx, by); ctx.rotate(r.a);
+      for (let k = 0; k < 4; k += 1) { ctx.fillStyle = k % 2 ? '#f4f4f4' : '#e0312b'; ctx.fillRect(-14 + k * 7, -4, 7, 8); }
+      ctx.restore();
+      const on = Math.floor(t * 4 + side) % 2 === 0;
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = on ? 'rgba(255,60,60,0.55)' : 'rgba(80,140,255,0.55)';
+      ctx.beginPath(); ctx.arc(bx, by, 14, 0, Math.PI * 2); ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+    }
   }
 }
 

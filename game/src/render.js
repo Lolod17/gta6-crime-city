@@ -6,8 +6,8 @@
 //   the split; loaded in the split-pass smoke run with no console errors.
 import { COLORS } from './config.js';
 import { view } from './render/draw.js';
-import { drawGround, drawWater, drawBoats, drawScenery, drawLight } from './render/world.js';
-import { drawMarkers, drawPickups, drawActors, drawBullets, drawHeli } from './render/entities.js';
+import { drawGround, drawWater, drawBoats, drawPort, drawScenery, drawLight } from './render/world.js';
+import { drawMarkers, drawPickups, drawActors, drawBullets, drawHeli, drawBlockade } from './render/entities.js';
 import { drawDecals, drawParticles, drawFloatText } from './render/fx.js';
 
 export { createFx, burst, addDecal, floatText, addShake, updateEffects } from './render/fx.js';
@@ -33,7 +33,9 @@ export function renderFrame(r, state) {
   drawGround(ctx, r);
   drawWater(ctx, t);
   drawBoats(ctx, r, t);
+  drawPort(ctx, r, t);
   drawDecals(ctx, state);
+  drawBlockade(ctx, state, t);
   drawMarkers(ctx, state, t);
   drawPickups(ctx, state, t);
   drawActors(ctx, state, t);

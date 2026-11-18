@@ -2,6 +2,8 @@
 //   dialogue subtitles, the job briefing card, the key hint and the big centre banners.
 // EXPORTS: hintLine, pushNotice, updateOverlays
 // USES: ../config.js, ../radio.js, ./panels.js
+// DISTRICT PASS: the counter panel lists what a shop sells (Armas del Muelle, and Punta Arms, whose
+//   shopView was built but never shown); the banner takes its district's accent colour.
 // MUST NOT: decide what is said or when (story.js, jobs.js and radio.js do); it shows what state holds.
 import { HUD } from '../config.js';
 import { radioLine } from '../radio.js';
@@ -9,10 +11,11 @@ import { set } from './panels.js';
 
 /** The one-line key hint above the dialogue: job briefing, shop counter, mission hint, or the car in reach. */
 export function hintLine(state) {
-  if (state.mode !== 'play' && state.mode !== 'mission' && state.mode !== 'shop') return '';
+  if (state.mode !== 'play' && state.mode !== 'mission' && state.mode !== 'shop' && state.mode !== 'arms') return '';
   const p = state.player;
   if (state.briefing) return 'ENTER — take the job    BACKSPACE — not now';
   if (state.mode === 'shop') return '1–4 — buy    BACKSPACE — leave the counter';
+  if (state.mode === 'arms') return '1–3 — buy    BACKSPACE — leave the counter';
   if (state.missionHint) return state.missionHint;
   if (p.car) return '';
   for (const v of state.vehicles) {
@@ -47,7 +50,10 @@ export function updateOverlays(state, els, dt) {
   const lb = state.locationBanner;
   set(els, 'loc', lb ? lb.name : '', () => {
     els.locBanner.classList.toggle('hidden', !lb);
-    if (lb) { els.locName.textContent = lb.name; els.locTag.textContent = lb.tagline; }
+    if (lb) {
+      els.locName.textContent = lb.name; els.locTag.textContent = lb.tagline;
+      els.locBanner.style.borderLeftColor = lb.accent || '';   // beach teal, port hazard yellow
+    }
   });
   const dl = state.dialogue;
   set(els, 'dialogue', dl ? dl.speaker + dl.text : '', () => {
@@ -62,6 +68,26 @@ export function updateOverlays(state, els, dt) {
       els.brGiver.textContent = `for ${br.giver}`;
       els.brText.textContent = br.text;
       els.brReward.textContent = `PAYS $${br.reward.toLocaleString('en-US')}`;
+    }
+  });
+  // the shop counter: whichever counter the player is standing at
+  const cv = state.mode === 'arms' ? state.armsView : state.mode === 'shop' && state.shopView ? { title: 'PUNTA ARMS', sub: 'Guns, vests and one very fast car', ...state.shopView } : null;
+  const cvKey = cv ? cv.title + cv.sub + cv.items.map((i) => `${i.name}${i.price}${i.note}`).join('|') : '';
+  set(els, 'counter', cvKey, () => {
+    els.counter.classList.toggle('hidden', !cv);
+    if (!cv) return;
+    els.counter.innerHTML = '';
+    const head = document.createElement('div'); head.className = 'ctTitle'; head.textContent = cv.title;
+    const sub = document.createElement('div'); sub.className = 'ctSub'; sub.textContent = cv.sub;
+    els.counter.append(head, sub);
+    for (const it of cv.items) {
+      const row = document.createElement('div'); row.className = 'ctRow' + (it.owned ? ' owned' : '');
+      const key = document.createElement('b'); key.textContent = it.n;
+      const name = document.createElement('span'); name.className = 'ctName'; name.textContent = it.name;
+      const price = document.createElement('span'); price.className = 'ctPrice'; price.textContent = `$${it.price.toLocaleString('en-US')}`;
+      const note = document.createElement('div'); note.className = 'ctNote'; note.textContent = it.note;
+      row.append(key, name, price, note);
+      els.counter.append(row);
     }
   });
   set(els, 'hint', state.hint || '', (v) => { els.hint.textContent = v; els.hint.classList.toggle('hidden', !v); });

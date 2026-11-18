@@ -1,13 +1,16 @@
-// missions.js — JOB: the twelve story missions as data for the job runner.
+// missions.js — JOB: the fifteen story missions as data for the job runner.
 // EXPORTS: defineMissions
 // USES: config.js, city.js, police.js, traffic.js, player.js, vehicle.js, render.js, audio.js, crew.js, racing.js, story.js, shop.js, jobs.js
 // SPLIT PASS: code unchanged; imported by boot/state.js after the split; its imports from police.js and traffic.js
 //   now resolve through those re-export shims; loaded in the split-pass smoke run with no console errors.
+// DISTRICT PASS: day 4, THE COAST — missions 13–15: SANDTRAP (a chase through Bahía Azul), STACKED (a
+//   shootout in the Southside container yard) and LAST CALL (a timed van run through the port gates).
 //
 // The twelve story missions of SUNDOWN: Puerto Ámbar, as a three-day arc for Rio Salcedo.
 //   Day 1 — LEARN THE CITY: Collection, Fragile, The Tail, The Dash
 //   Day 2 — THE CREW:       Three Drops, Street Race, Protection, The Warehouse
 //   Day 3 — THE HEAT:       The Aurelia, Heat, Muelle Cinco, The Ledger
+//   Day 4 — THE COAST:      Sandtrap, Stacked, Last Call
 // Each mission is data for the runner in jobs.js: a giver, a start marker, a briefing, dialogue,
 // a reward, and stages (objective line, timer, markers, fail condition). story.js decides which one
 // is unlocked; crew.js and racing.js supply the gunmen and the rival driver.
@@ -66,10 +69,35 @@ const escapeStage = (level, who, line, objective = 'Escape the police') => ({
     if (state.wanted.level === 0) return 'next';
   },
 });
+/** SANDTRAP's courier: laps of the four roads round Bahía Azul's beach blocks (road indices i, j). */
+const COURIER_LAP = [[6, 0], [8, 0], [8, 2], [6, 2]];
+
+/** The courier's own driving: flat out to the next corner of the lap, brake for the turn, back out when stuck. */
+function driveCourier(v, m, dt) {
+  const c = v.control;
+  const [tx, ty] = m.route[m.wp];
+  if (Math.hypot(tx - v.x, ty - v.y) < 70) m.wp = (m.wp + 1) % m.route.length;
+  let diff = Math.atan2(ty - v.y, tx - v.x) - v.a;
+  diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+  const sp = Math.hypot(v.vx, v.vy);
+  if (m.reverse > 0) {
+    m.reverse -= dt;
+    c.throttle = 0; c.brake = 1; c.steer = -Math.sign(diff); c.handbrake = false;
+    return;
+  }
+  const sharp = Math.abs(diff) > 0.8;
+  c.steer = Math.max(-1, Math.min(1, diff * 3));
+  c.throttle = sharp && sp > 200 ? 0 : 1;
+  c.brake = sharp && sp > 260 ? 1 : 0;
+  c.handbrake = sharp && sp > 300;
+  if (sp < 30) m.stuck += dt; else m.stuck = Math.max(0, m.stuck - dt);
+  if (m.stuck > 1.2) { m.stuck = 0; m.reverse = 0.8; }
+}
+
 /** The race checkpoints against Teo: a lap of downtown and the marina that ends where it began. */
 const RACE_LINE = [[1, 4], [4, 4], [4, 8], [7, 8], [7, 4], [5, 1], [1, 1]];
 
-// ------------------------------------------------------------------ the twelve missions
+// ------------------------------------------------------------------ the fifteen missions
 
 export function defineMissions(city) {
   const P = city.places;
@@ -579,6 +607,174 @@ export function defineMissions(city) {
           },
         },
         escapeStage(3, 'INES', 'You sold my city, Rio.', 'Inés knows — escape with the money'),
+      ],
+    },
+
+    // =============================================================== DAY 4 — THE COAST
+    {
+      id: 'sandtrap', day: 4, title: 'SANDTRAP', giver: 'NANDO', start: P.playa, reward: 2500,
+      briefing: 'A Glasshand courier is running Teo\'s last cash out along Bahía Azul to a waiting boat. Run his pink Marlin off the road before he reaches the water, then take the bag from the wreck.',
+      dialogue: [
+        ['NANDO', 'Pink Marlin. Teo\'s last cash.'],
+        ['MARA', 'He\'s on the beach road now.'],
+        ['RIO', 'Then he\'s mine. Hold the boat.'],
+      ],
+      outro: ['MARA', 'Boat left empty. Nice driving.'],
+      stages: [
+        getACar('Get in a car — the courier is moving'),
+        {
+          objective: 'Run the courier off the road', timer: 80,
+          timeout: 'The courier reached his boat.',
+          cues: [[55, 'MARA', 'He\'s heading for the sand!'], [25, 'NANDO', 'Boat\'s waiting. Hit him!']],
+          enter(state, m) {
+            // he laps Bahía Azul's four roads flat out, starting up the north road ahead of the player
+            m.courier = createVehicle('marlin', roadCenter(6) + 200, roadCenter(0), 0, state.rng);
+            const c = m.courier;
+            c.color = '#ff6fb5'; c.driver = 'gang'; c.mission = true;
+            c.topSpeed = JOBS.courierSpeed;
+            c.maxHealth *= 0.75; c.health = c.maxHealth; c.hitBy = null;
+            state.vehicles.push(c);
+            m.entities.push(c);
+            m.route = COURIER_LAP.map(([i, j]) => [roadCenter(i), roadCenter(j)]);
+            m.wp = 1; m.stuck = 0; m.reverse = 0;
+            m.grace = 6;
+            m.harm = 0; m.lastHealth = c.health;   // only the player's rams and rounds count
+            say(state, 'NANDO', 'There he goes — the pink one!');
+          },
+          marker: (state, m) => markerAt(m.courier, PINK, 'COURIER', 30),
+          update(state, m, dt) {
+            const c = m.courier, p = state.player;
+            // pulled out of his seat: the bag is the player's for the taking
+            if (c.driver === 'player' || (c.driver === null && !c.dead)) { m.bag = { x: c.x, y: c.y }; return 'next'; }
+            if (c.driver === 'gang') driveCourier(c, m, dt);
+            const d = Math.hypot(c.x - p.x, c.y - p.y);
+            if (m.grace > 0) m.grace -= dt;
+            else if (d > JOBS.chaseLost) return '!The courier got away.';
+            // play-testing: driving in a panic he wrecked himself on traffic with nobody near him. His own
+            // scrapes are now shrugged off; damage counts only when the player dealt it.
+            const lost = m.lastHealth - c.health;
+            if (lost > 0) {
+              if (c.hitBy === 'player') m.harm += lost;
+              else if (!c.dead) c.health += lost;
+            }
+            c.hitBy = null;
+            m.lastHealth = c.health;
+            // wrecked enough and he bails: the bag stays in the car
+            if (c.dead || m.harm >= c.maxHealth * (1 - JOBS.courierBail)) {
+              if (c.driver === 'gang') { c.driver = null; c.control.throttle = 0; c.control.brake = 1; }
+              m.bag = { x: c.x, y: c.y };
+              burst(state, 'smoke', c.x, c.y, 8, 1);
+              return 'next';
+            }
+            const left = Math.max(0, Math.round(100 - (m.harm / (c.maxHealth * (1 - JOBS.courierBail))) * 100));
+            m.objectiveOverride = `Run the courier off the road — his car ${left}% · ${Math.round(d)} m ahead`;
+          },
+        },
+        {
+          objective: 'Take the cash bag from the wreck',
+          marker: (state, m) => markerAt(m.bag, GREEN, 'CASH BAG', 30),
+          enter(state) { say(state, 'RIO', 'He\'s out. Where\'s the bag?'); sfx('objective', 0.6); },
+          update(state, m) {
+            if (near(state.player, m.bag, 46)) { state.notify('Cash bag taken', GREEN); sfx('pickup', 0.9); return 'next'; }
+          },
+        },
+      ],
+    },
+    {
+      id: 'stacked', day: 4, title: 'STACKED', giver: 'INES', start: P.yardGate, reward: 4500,
+      briefing: 'What is left of the Glasshands has dug in among the container stacks of the Southside port, guarding a refrigerated box of Teo\'s goods. Clear the yard before the PAPD seals the port, then crack the reefer.',
+      dialogue: [
+        ['INES', 'Last Glasshands. Container yard.'],
+        ['INES', 'Two minutes before the port closes.'],
+        ['RIO', 'Then I\'d better not miss.'],
+      ],
+      outro: ['INES', 'The port is ours now, Rio.'],
+      stages: [
+        {
+          objective: 'Get into the container yard',
+          enter(state) {
+            const p = state.player;
+            if (p.armor < 60) { p.armor = 60; state.notify('Vest from Inés', Y); }
+          },
+          marker: () => markerAt(P.yard, Y, 'CONTAINER YARD', 50),
+          update(state) { if (near(state.player, P.yard, 120)) return 'next'; },
+        },
+        {
+          objective: 'Clear the container yard', timer: 120,
+          timeout: 'The PAPD sealed the port.',
+          cues: [[60, 'INES', 'One minute. Keep moving.'], [20, 'RADIO', 'Units closing on Southside port.']],
+          enter(state, m) {
+            const x0 = blockStart(7), y0 = blockStart(8), s = BLOCK_SIZE;
+            m.crew.push(...spawnCrew(state, x0, y0, [[60, 40], [130, 70], [205, 40], [120, 150], [60, 230], [215, 200], [140, 260], [240, 120]], { shirt: '#3a3a44' }));
+            state.noGunHeat = true;   // the port's own business: nobody calls this one in
+            say(state, 'GANG', 'Ocampo\'s driver! Behind the reds!');
+            m.yardCentre = { x: x0 + s / 2, y: y0 + s / 2 };
+          },
+          update(state, m) {
+            const left = alive(m.crew);
+            m.objectiveOverride = `Clear the container yard — ${left} Glasshand${left === 1 ? '' : 's'} left`;
+            if (left === 0) return 'next';
+          },
+        },
+        {
+          objective: 'Crack the reefer container',
+          marker: () => markerAt(P.reefer, GREEN, 'REEFER', 32),
+          enter(state) { state.noGunHeat = false; say(state, 'RIO', 'Yard\'s quiet. Opening the reefer.'); },
+          update(state) {
+            if (near(state.player, P.reefer, 46)) {
+              state.addMoney(1500, P.reefer.x, P.reefer.y);
+              burst(state, 'cash', P.reefer.x, P.reefer.y, 10, 1);
+              return 'next';
+            }
+          },
+        },
+        escapeStage(2, 'RADIO', 'Shots at the Southside port.'),
+      ],
+    },
+    {
+      id: 'lastcall', day: 4, title: 'LAST CALL', giver: 'NANDO', start: P.portVan, reward: 6000,
+      briefing: 'The Ámbar Star sails on the tide. Drive Nando\'s refrigerated van through the three port gates — the coast-road gate, the crane row and the end of the quay — and up to the freighter\'s gangway before she casts off. Keep the cargo cold and in one piece.',
+      dialogue: [
+        ['NANDO', 'The Ámbar Star sails at the bell.'],
+        ['NANDO', 'Three gates, then the gangway.'],
+        ['RIO', 'And if I\'m late?'],
+        ['NANDO', 'Then swim the cargo out.'],
+      ],
+      outro: ['NANDO', 'She sailed full. We\'re even, Rio.'],
+      stages: [
+        {
+          objective: 'Get in Nando\'s reefer van',
+          enter(state, m) { m.van = spawnCar(state, m, P.portVan, 'mule', 0, 52); m.van.color = '#dfe8ee'; },
+          marker: (state, m) => markerAt(m.van, Y, 'REEFER VAN', 36),
+          update(state, m) {
+            if (m.van.dead) return '!The van is wrecked.';
+            if (state.player.car === m.van) return 'next';
+          },
+        },
+        {
+          objective: 'Drive through the port gates', timer: 40,   // the robot driver needed 14 s; a person about 25
+          timeout: 'The Ámbar Star sailed without the cargo.',
+          cues: [[28, 'NANDO', 'The crew is untying her.'], [12, 'NANDO', 'Horn\'s going! Drive!']],
+          enter(state, m) { m.gate = 0; m.away = 0; say(state, 'NANDO', 'First gate, the coast road.'); },
+          marker: (state, m) => (m.gate < P.portGates.length
+            ? markerAt(P.portGates[m.gate], Y, `GATE ${m.gate + 1}/${P.portGates.length}`, 60)
+            : markerAt(P.berth, '#7fd0ff', 'GANGWAY', 60)),
+          update(state, m, dt) {
+            const v = m.van;
+            if (v.dead || v.health < v.maxHealth * JOBS.reeferShare) return '!The cargo is ruined.';
+            // leaving the van: a few seconds to get back in, then the job is off
+            if (state.player.car !== v) { m.away += dt; if (m.away > 8) return '!You left the van.'; } else m.away = 0;
+            const goal = m.gate < P.portGates.length ? P.portGates[m.gate] : P.berth;
+            if (state.player.car === v && near(v, goal, 80)) {
+              m.gate += 1;
+              sfx('objective', 0.6);
+              if (m.gate > P.portGates.length) return 'next';
+              state.notify(m.gate < P.portGates.length ? `Gate ${m.gate} cleared` : 'Last gate — the gangway!', Y);
+            }
+            const where = m.gate < P.portGates.length ? `gate ${m.gate + 1}/${P.portGates.length}` : 'the gangway';
+            m.objectiveOverride = `Through the port to ${where} — cargo ${pct(v, JOBS.reeferShare)}%${m.away > 0 ? ' · GET BACK IN THE VAN' : ''}`;
+          },
+        },
       ],
     },
   ];

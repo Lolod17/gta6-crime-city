@@ -2,6 +2,9 @@
 // EXPORTS: CHUNK, roundRect, shade, drawGroundInto, drawBuilding, view, visible
 // USES: ../config.js, ../city.js
 // MUST NOT: read game state (player, cars, wanted level) or own any loop; it draws what it is handed.
+// DISTRICT PASS: drawGroundInto takes an optional painter ({ block, coast }) so render/world.js can lay the
+//   beach and port ground into the same baked chunk, under the shadows; container roofs get ribs and beach
+//   huts a thatch or an awning.
 // SPLIT PASS: code unchanged; outside render/ it is reached only through render.js, which boot/state.js, boot/loop.js, police/pursuit.js,
 //   traffic/behaviour.js import after the split; loaded in the split-pass smoke run with no console errors.
 import { WORLD, COLORS, CAMERA } from '../config.js';
@@ -22,7 +25,7 @@ export function roundRect(ctx, x, y, w, h, r) {
 
 const SUN = { x: 0.62, y: 0.34 };   // shadow direction per unit of height (sun low in the west)
 
-export function drawGroundInto(ctx, city, ox, oy) {
+export function drawGroundInto(ctx, city, ox, oy, paint = null) {
   const rng = makeRng(city.seed + ox * 7 + oy * 13);
   const beachX = WORLD.beachCol * T, waterX = WORLD.waterCol * T;
   ctx.save();
@@ -73,6 +76,8 @@ export function drawGroundInto(ctx, city, ox, oy) {
     for (let x = p.x; x < p.x + p.w; x += 9) { ctx.moveTo(x, p.y); ctx.lineTo(x, p.y + p.h); }
     ctx.stroke();
   }
+  // district coast: the port quay over the sand, the beach strip's extras
+  if (paint && paint.coast) paint.coast(ctx, city, ox, oy, rng);
 
   // blocks: sidewalk, kerb, then the inside
   for (const b of city.blocks) {
@@ -92,6 +97,7 @@ export function drawGroundInto(ctx, city, ox, oy) {
     }
     ctx.stroke();
     const s = WORLD.sidewalk;
+    if (paint && paint.block && paint.block(ctx, b, rng)) continue;
     if (b.kind === 'downtown' || b.kind === 'marina' || b.kind === 'commercial' || b.kind === 'yard') {
       ctx.fillStyle = b.kind === 'downtown' ? COLORS.plaza : b.kind === 'yard' ? '#a89a84' : b.kind === 'marina' ? '#bdb5a6' : '#a9a49b';
       ctx.fillRect(b.x + s, b.y + s, b.size - 2 * s, b.size - 2 * s);
@@ -278,7 +284,29 @@ export function drawBuilding(ctx, b, cx, cy, t) {
   ctx.fillRect(rx, ry, rw, rh);
   ctx.strokeStyle = shade(b.roof, -0.3); ctx.lineWidth = 3;
   ctx.strokeRect(rx + 1.5, ry + 1.5, rw - 3, rh - 3);
-  if (b.kind === 'house') {
+  if (b.kind === 'hut') {
+    // beach huts: a thatch of straw strokes on the bar, red-and-white awning stripes on the lifeguard huts
+    const thatch = b.roof === '#d9a441';
+    ctx.strokeStyle = thatch ? 'rgba(120,80,30,0.55)' : 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = thatch ? 1.2 : 4;
+    ctx.beginPath();
+    for (let k = thatch ? 3 : 6; k < rw; k += thatch ? 4 : 10) { ctx.moveTo(rx + k, ry + 2); ctx.lineTo(rx + k - (thatch ? 2 : 0), ry + rh - 2); }
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,240,200,0.18)'; ctx.fillRect(rx, ry, rw, rh * 0.35);
+  } else if (b.kind === 'container') {
+    // corrugated lid: ribs across the short side, a darker end for each box in the stack
+    ctx.strokeStyle = shade(b.roof, -0.22); ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    const along = rw >= rh;
+    const n = Math.floor((along ? rw : rh) / 5);
+    for (let k = 1; k < n; k += 1) {
+      if (along) { ctx.moveTo(rx + k * 5, ry + 2); ctx.lineTo(rx + k * 5, ry + rh - 2); }
+      else { ctx.moveTo(rx + 2, ry + k * 5); ctx.lineTo(rx + rw - 2, ry + k * 5); }
+    }
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    if (along) ctx.fillRect(rx + rw - 6, ry, 6, rh); else ctx.fillRect(rx, ry + rh - 6, rw, 6);
+  } else if (b.kind === 'house') {
     // hip roof ridge
     ctx.strokeStyle = shade(b.roof, -0.18); ctx.lineWidth = 1.5;
     const inset = Math.min(rw, rh) * 0.35;
