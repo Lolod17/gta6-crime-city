@@ -89,3 +89,24 @@
   - THE TAIL's lane-car spawner moved from `missions.js` to `traffic.js` (`spawnLaneCar`).
   - `seatPlayer` moved from `missions.js` to `player.js`.
   - Two unused re-exports (`CAR` from `police.js`, `say` from `jobs.js`) are gone.
+
+## Pass 5: render and city split into focused modules
+
+- **Moved, not rewritten.** `render.js` (842 lines) and `city.js` (414) were split by copying line
+  ranges across unchanged. The new files are `render/draw.js`, `render/world.js`,
+  `render/entities.js`, `render/fx.js`, `city/roads.js`, `city/blocks.js` and `city/collide.js`.
+  `render.js` and `city.js` stay as the public entries with the same exports, so no caller changed.
+  `renderFrame` was one 260-line function. Each of its commented passes became a named function
+  with the same body, and they are called in the original order. The tile-grid loop in `buildCity`
+  became `layTiles(city)`, called from the same spot.
+- **Two modules the brief did not name.** The effect emitters (particles, decals, floating text,
+  shake) are neither primitives, scenery nor entities, so they went to `render/fx.js`. The collision
+  and line-of-sight queries are neither block generation nor the road grid, so they went to
+  `city/collide.js`. The HUD was already its own file (`hud.js`), so it was left as it is.
+- **How sameness was checked.** `buildCity` from the old and new code gives identical JSON for
+  seeds 1977, 1 and 42, and `isBlocked`, `lineOfSight`, `worldToZone` and `nearestNode` agree on
+  3,000 sample points. The old and new `renderFrame` drew the same live game state onto two canvases
+  with 0 differing bytes: a street with particles and decals, the helicopter with its searchlight,
+  dusk at 21:04 with the streetlamps, and bullets, markers and floating text.
+- **Screenshots** were retaken on this build with the pass-4 sampler: real keyboard and mouse input,
+  and a frame is kept only when every layer the scene needs is on screen. Unedited JPEGs from Chrome.

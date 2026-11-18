@@ -1,6 +1,22 @@
 [
-  { "name": "1-cover-dash.jpg", "scene": "Mission 4/12, THE DASH: the Marlin GT at 179 km/h with two stars, mission label with the countdown, objective, distance to the safehouse, SOUTHSIDE district banner with its tagline, DAY 1 clock, radio line, Inés on the line, minimap with the objective dot, cash, health, speedometer", "how": "played with real keyboard input in Chrome at 1280x720; a sampler kept the frame only when every layer was on screen at once" },
-  { "name": "2-on-foot.jpg", "scene": "On foot with the pistol on a residential street, a shot's tracer in the air, pedestrians, and witnesses phoning the PAPD", "how": "real keyboard and mouse input" },
-  { "name": "3-four-star-heli.jpg", "scene": "Mission 10/12, HEAT: four stars, cruisers at the junction, the PAPD helicopter's searchlight cone on the player, CENTRO banner, Dario on the line", "how": "real keyboard input" },
-  { "name": "4-dusk-street.jpg", "scene": "A quiet street at 21:04: the coast in violet dusk with the sodium streetlamps lit at every junction", "how": "real keyboard input, a walk while the clock ran into the evening" }
+  {
+    "name": "1-cover-dash.jpg",
+    "scene": "Mission 4/12, THE DASH: the Marlin GT at 107 km/h with two stars, mission label with the 76s countdown, objective, 2937 m to the safehouse, PALMAS VERDES banner with its tagline, DAY 1 19:28 clock, Radio Sol line, Inés on the line, minimap, cash, pistol, health and armour",
+    "how": "pass 5 build (render/city split): real keyboard input in headless Chrome at 1280x720; a sampler kept the frame only when every layer was on screen at once"
+  },
+  {
+    "name": "2-on-foot.jpg",
+    "scene": "On foot with the pistol beside Inés's yellow THREE DROPS marker at Taqueria Inés, pedestrians on the kerbs",
+    "how": "pass 5 build: real keyboard and mouse input"
+  },
+  {
+    "name": "3-four-star-heli.jpg",
+    "scene": "Mission 10/12, HEAT: four stars, cruisers piling into the junction, the PAPD helicopter's searchlight on the player, DOWNTOWN banner, Rio on the line",
+    "how": "pass 5 build: real keyboard input; the robot's car health was topped up"
+  },
+  {
+    "name": "4-dusk-street.jpg",
+    "scene": "A quiet street at 20:55 on day 2: violet dusk with the sodium streetlamps lit at every junction",
+    "how": "pass 5 build: real keyboard input, a walk while the clock ran into the evening"
+  }
 ]

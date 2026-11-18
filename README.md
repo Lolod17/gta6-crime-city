@@ -39,16 +39,24 @@ follows with a searchlight; after 19:00 the city sinks into dusk and the streetl
 
 ## Source
 
-One job per file under `game/src/`. Each file opens with a `JOB:` line and an `EXPORTS:` line.
+One job per file under `game/src/`. Each file opens with a `JOB:` line and an `EXPORTS:` line; the
+modules under `render/` and `city/` add a `MUST NOT:` line.
 
 | File | Job |
 |---|---|
 | `main.js` | boot, input, the fixed-step loop, the screen state machine |
 | `config.js` | every tunable number |
-| `city.js` | the seeded city as data, with collision and line-of-sight queries |
+| `city.js` | public entry for the city: re-exports `city/` |
+| `city/blocks.js` | the seeded generation: blocks, lots, buildings, trees, coast, named places, districts |
+| `city/roads.js` | the street grid: tile kinds, road and block positions, intersections, kerb points |
+| `city/collide.js` | the solids hash: collision, line of sight, segment tests |
 | `districts.js` | district names, taglines, the entry banner |
 | `clock.js` | time of day: day start, running clock, HUD text, dusk depth |
-| `render.js` | drawing the world, and particles/decals/floating text |
+| `render.js` | public entry for drawing: `renderFrame` runs the passes in order, re-exports `render/` |
+| `render/draw.js` | primitives: shapes, shading, the baked ground chunk (roads), extruded buildings |
+| `render/world.js` | the city and static scenery: chunk cache, water, boats, trees and buildings, light and dusk |
+| `render/entities.js` | people, cars, the player, bullets, markers, pickups, the police helicopter |
+| `render/fx.js` | particles, decals, floating text, shake: emit, age, draw |
 | `camera.js` | the follow camera |
 | `player.js` | walking, aiming, shooting, cars in and out, bullets |
 | `vehicle.js` | car models and physics, damage, fire |
