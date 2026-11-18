@@ -82,7 +82,29 @@ export function initTraffic(state) {
 /** Fill the streets around the player at once (game start, respawn), on screen included. */
 export function populate(state) {
   for (let k = 0; k < TRAFFIC.cars; k += 1) spawnCar(state, 160);
-  for (let k = 0; k < TRAFFIC.peds; k += 1) spawnPed(state, 60);
+  // two thirds of the crowd lands inside the screen, so the pavement reads as busy at a glance
+  const near = Math.round(TRAFFIC.peds * 0.65);
+  for (let k = 0; k < TRAFFIC.peds; k += 1) {
+    if (k < near) spawnPed(state, 150, 680); else spawnPed(state, 60);
+  }
+}
+
+/** Refill the streets up to their caps after a teleport, counting what is already near the player,
+    so a respawn cannot pile a second crowd on top of the first. */
+export function topUpCrowd(state) {
+  const p = state.player;
+  let civ = 0;
+  for (const ped of state.peds) {
+    if (ped.kind !== 'civ' || ped.dead) continue;
+    if (Math.hypot(ped.x - p.x, ped.y - p.y) <= TRAFFIC.despawn) civ += 1;
+  }
+  let cars = 0;
+  for (const v of state.vehicles) {
+    if (v.police || v.dead || v.driver !== 'ai') continue;
+    if (Math.hypot(v.x - p.x, v.y - p.y) <= TRAFFIC.despawn) cars += 1;
+  }
+  for (let k = civ; k < TRAFFIC.peds; k += 1) spawnPed(state, 60);
+  for (let k = cars; k < TRAFFIC.cars; k += 1) spawnCar(state, 160);
 }
 
 function spawnCar(state, minDist = TRAFFIC.spawnMin) {
@@ -110,7 +132,7 @@ function spawnCar(state, minDist = TRAFFIC.spawnMin) {
 }
 
 
-function spawnPed(state, minDist = TRAFFIC.spawnMin * 0.8) {
+function spawnPed(state, minDist = TRAFFIC.spawnMin * 0.8, maxDist = TRAFFIC.spawnMax) {
   const p = state.player;
   const rng = state.rng;
   for (let tries = 0; tries < 6; tries += 1) {
@@ -119,7 +141,7 @@ function spawnPed(state, minDist = TRAFFIC.spawnMin * 0.8) {
     const s = rng.range(0, 4 * BLOCK_SIZE);
     const pt = loopPoint(b, s);
     const d = Math.hypot(pt.x - p.x, pt.y - p.y);
-    if (d < minDist || d > TRAFFIC.spawnMax) continue;
+    if (d < minDist || d > maxDist) continue;
     const ped = makePerson('civ', pt.x, pt.y, rng);
     ped.block = b; ped.s = s; ped.health = TRAFFIC.pedHealth;
     state.peds.push(ped);

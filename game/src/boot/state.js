@@ -9,7 +9,7 @@ import { createRenderer, createFx, floatText } from '../render.js';
 import { createCamera, placeCamera } from '../camera.js';
 import { createPlayer } from '../player.js';
 import { createVehicle } from '../vehicle.js';
-import { hurtPed, ejectDriver, scarePeople, populate } from '../traffic.js';
+import { hurtPed, ejectDriver, scarePeople, populate, topUpCrowd } from '../traffic.js';
 import { createWanted, createHeli, reportCrime, clearWanted, onEjectCop } from '../police.js';
 import { initJobs, failMission } from '../jobs.js';
 import { defineMissions } from '../missions.js';
@@ -201,7 +201,7 @@ function respawn() {
   // a failed job sends the player back to its start marker; otherwise hospital or station
   spawnPlayer(state.respawnPoint || (state.respawnAt === 'station' ? city.places.station : city.places.hospital), true);
   state.respawnPoint = null;
-  populate(state);
+  topUpCrowd(state);
   if (loss > 0) state.addMoney(-loss);
   if (state.failNote) { state.notify(`Mission failed: ${state.failNote}`, '#ff5a5a'); state.failNote = null; }
   state.onRespawn && state.onRespawn();

@@ -115,8 +115,8 @@ export const JOBS = {
 };
 
 export const TRAFFIC = {
-  cars: 22,              // civilian cars kept alive around the player (scaled by density)
-  peds: 46,
+  cars: 30,              // civilian cars kept alive around the player (scaled by density)
+  peds: 90,
   parked: 26,            // parked cars placed once along kerbs
   spawnMin: 760,         // spawn ring: outside the screen ...
   spawnMax: 1250,        // ... but not too far

@@ -67,7 +67,7 @@ export function updateOverlays(state, els, dt) {
       els.brTitle.textContent = `JOB ${br.n} · ${br.title}`;
       els.brGiver.textContent = `for ${br.giver}`;
       els.brText.textContent = br.text;
-      els.brReward.textContent = `PAYS $${br.reward.toLocaleString('en-US')}`;
+      els.brReward.textContent = br.reward;
     }
   });
   // the shop counter: whichever counter the player is standing at
