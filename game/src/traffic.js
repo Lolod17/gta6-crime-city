@@ -1,6 +1,7 @@
 // traffic.js — JOB: city life: civilian cars driving the lanes, pedestrians, parked cars, cash pickups.
 // EXPORTS: makePerson, initTraffic, populate, driveAlongRoads, updateTraffic, scarePeople, hurtPed,
 //   ejectDriver, updatePickups, spawnLaneCar, loopPoint, DIRS, laneX, laneY, validDir, pickTurn
+// USES: config.js, city.js, vehicle.js, player.js, render.js, audio.js
 //
 // City life: civilian cars that follow the street grid in their lanes and turn at junctions,
 // pedestrians walking the sidewalks who flee from gunfire, parked cars, cash pickups. Everything

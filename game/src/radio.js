@@ -1,5 +1,6 @@
 // radio.js — JOB: the radio station and track line the HUD prints, cycling and muting.
 // EXPORTS: STATIONS, createRadio, radioLine, updateRadio, toggleMute
+// USES: config.js
 //
 // Radio Sol 98.7 and its sister stations: a station and a track title for the HUD, cycling every
 // RADIO.trackSeconds of play, muted and unmuted with the radio key, with the mute state kept in the

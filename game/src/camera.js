@@ -1,6 +1,7 @@
 // camera.js — JOB: the follow camera: lead, zoom with speed, clamp to the city, shake, and screen/world
 //   conversion.
 // EXPORTS: createCamera, placeCamera, updateCamera, shakeCamera, toScreen, toWorld
+// USES: config.js
 //
 // Smoothed follow camera: leads the player by their velocity, zooms out with speed, never snaps,
 // stays inside the city, and shakes briefly on impacts and gunfire (unless reduced motion is on).

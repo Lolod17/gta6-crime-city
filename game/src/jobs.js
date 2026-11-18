@@ -1,6 +1,7 @@
 // jobs.js — JOB: the job runner: one stage machine for story missions and side jobs, with briefings, markers,
 //   pass and fail.
 // EXPORTS: markerAt, initJobs, objectivePoint, failMission, updateJobs
+// USES: police.js, audio.js, crew.js, story.js, shop.js
 //
 // The job runner: one state machine for story missions (missions.js) and side activities
 // (activities.js). A job has a start marker, a briefing card, stages and a reward. Each stage has an

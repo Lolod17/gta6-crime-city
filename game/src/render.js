@@ -1,5 +1,6 @@
 // render.js — JOB: the one public entry for drawing: renderFrame runs the passes in order; everything else is re-exported from render/.
 // EXPORTS: createFx, burst, addDecal, floatText, addShake, updateEffects, createRenderer, warmGround, resizeRenderer, renderFrame
+// USES: config.js, render/draw.js, render/world.js, render/entities.js, render/fx.js
 // MUST NOT: hold drawing code of its own beyond the pass order and the camera transform (that lives in render/*.js).
 import { COLORS } from './config.js';
 import { view } from './render/draw.js';

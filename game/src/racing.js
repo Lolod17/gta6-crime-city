@@ -1,6 +1,7 @@
 // racing.js — JOB: street racing: checkpoint routes on the road grid, checkpoint progress, and the rival
 //   driver.
 // EXPORTS: junctions, routeThrough, createRace, updateRace, createRival, updateRival, rivalProgress
+// USES: city.js, vehicle.js, config.js
 //
 // Street racing: checkpoint routes laid along the road grid, the checkpoint ring the player must
 // drive through, and a rival driver who runs the same route. Used by the race against Teo Castellan

@@ -1,5 +1,6 @@
 // city/blocks.js — JOB: generating the city from its seed: the RNG, each block's lots and buildings, trees, the coast, parked cars, named places, and the district each point belongs to.
 // EXPORTS: makeRng, worldToZone, buildCity
+// USES: ../config.js, roads.js, collide.js
 // MUST NOT: draw anything (render/ does) or be called after boot: same seed, same city, built once.
 import { WORLD, COLORS } from '../config.js';
 import { BLOCKS_X, BLOCKS_Y, roadCenter, blockStart, BLOCK_SIZE, layTiles, kerbPoint } from './roads.js';

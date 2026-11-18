@@ -2,6 +2,7 @@
 //   mission is unlocked.
 // EXPORTS: CAST, DAYS, LAST_DAY, say, queueLines, updateDialogue, nextMission, missionsOfDay, storyComplete,
 //   beginDay, completeMission, updateStory, dayLabel
+// USES: audio.js, clock.js
 //
 // The story of SUNDOWN: Puerto Ámbar — the cast, the three days, each day's spoken lines, the
 // subtitle queue, and which mission is unlocked. Missions unlock in order inside a day; the day

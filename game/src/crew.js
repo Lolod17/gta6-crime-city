@@ -1,5 +1,6 @@
 // crew.js — JOB: hostile gunmen on foot: spawning a crew, waking it, and its fight behaviour.
 // EXPORTS: openGround, spawnCrew, ring, updateCrew, alive, dismissCrew
+// USES: config.js, city.js, traffic.js, player.js, render.js, audio.js
 //
 // Hostile crews on foot: the Glasshands and anyone else who shoots back. Used by the warehouse
 // shootout, the protection job, the docks betrayal and the rampage. A crew member wakes when they

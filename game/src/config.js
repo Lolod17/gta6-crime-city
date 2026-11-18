@@ -1,6 +1,7 @@
 // config.js — JOB: every tunable number in the game, in one place.
 // EXPORTS: STEP, SLOW_FRAME_MS, WORLD, CAMERA, CAR, PLAYER, WEAPONS, WEAPON_ORDER, SHOP, JOBS, TRAFFIC,
 //   POLICE, GANG, HUD, CLOCK, RADIO, AUDIO, COLORS
+// USES: nothing (no imports)
 //
 // Every tunable number in one place. Distances are world pixels, times are seconds, speeds px/s.
 // The rest of the game imports from here and hard-codes nothing it might want to tune.

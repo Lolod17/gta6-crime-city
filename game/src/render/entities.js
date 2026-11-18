@@ -1,5 +1,6 @@
 // render/entities.js — JOB: drawing what moves through the city: people, cars, the player and the aim line, bullets, mission markers, pickups, and the police helicopter with its searchlight.
 // EXPORTS: drawMarkers, drawPickups, drawActors, drawBullets, drawHeli
+// USES: draw.js
 // MUST NOT: move, spawn or damage anything; it reads state and draws it.
 import { roundRect, shade, visible } from './draw.js';
 

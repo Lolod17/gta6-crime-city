@@ -1,5 +1,6 @@
 // persist.js — JOB: the single save slot in localStorage: write, read and validate.
 // EXPORTS: hasSave, saveGame, loadGame
+// USES: nothing (no imports)
 //
 // Save and load through localStorage: cash, the story day, the ids of completed missions, what was
 // bought, activity bests, stats and the wanted level. One slot, written on every job passed, every

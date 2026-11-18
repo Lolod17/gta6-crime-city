@@ -1,3 +1,6 @@
+<!-- JOB: the project front page: what the game is, how to run and play it.
+     EXPORTS: nothing (documentation, rendered by the repository host)
+     USES: nothing (links to screenshots/ and game/) -->
 # SUNDOWN: Puerto Ámbar
 
 [![gta6-01](https://make.fun/badge/gta6-01.svg)](https://make.fun/bounty/gta6-01)

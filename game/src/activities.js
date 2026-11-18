@@ -1,6 +1,7 @@
 // activities.js — JOB: the three replayable side jobs (checkpoint sprint, courier run, rampage) as data for
 //   the job runner.
 // EXPORTS: defineActivities
+// USES: police.js, audio.js, crew.js, racing.js, vehicle.js, jobs.js
 //
 // Side activities: three replayable jobs outside the story, each at its own blue marker.
 //   CHECKPOINT SPRINT — a timed run through six checkpoints. Pays by time left; street racing

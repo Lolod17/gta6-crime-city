@@ -1,5 +1,6 @@
 // city/roads.js — JOB: the street grid: tile kinds, where the roads and blocks fall, the tile map, nearest intersection, and kerb points beside a block.
 // EXPORTS: T_ROAD, T_BLOCK, T_PARK, T_SAND, T_WATER, BLOCKS_X, BLOCKS_Y, roadCenter, blockStart, BLOCK_SIZE, ROADS_X, ROADS_Y, layTiles, nearestNode, kerbPoint
+// USES: ../config.js
 // MUST NOT: place buildings, trees or named places (city/blocks.js), or answer collision queries (city/collide.js).
 import { WORLD } from '../config.js';
 

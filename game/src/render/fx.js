@@ -1,5 +1,6 @@
 // render/fx.js — JOB: the effects the simulation emits (particles, decals, floating text, camera shake): emitting, ageing, and drawing them.
 // EXPORTS: createFx, burst, addDecal, floatText, addShake, updateEffects, drawDecals, drawParticles, drawFloatText
+// USES: ../camera.js, draw.js
 // MUST NOT: decide when an effect happens (callers do) or touch anything but state.fx and the camera shake.
 import { shakeCamera } from '../camera.js';
 import { visible } from './draw.js';

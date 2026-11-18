@@ -1,5 +1,6 @@
 // districts.js — JOB: district names and taglines, and the banner shown when the player crosses into one.
 // EXPORTS: DISTRICTS, districtAt, updateDistricts, resetDistricts
+// USES: config.js, city.js
 //
 // The named districts of Puerto Ámbar and their one-line taglines. The city generator tags each
 // block with a kind (city.js district()); this file gives each zone a name for its people and a

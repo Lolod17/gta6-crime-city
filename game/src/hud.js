@@ -1,6 +1,7 @@
 // hud.js — JOB: the DOM heads-up display: stars, cash, weapon, minimap, health/armour, mission label,
 //   objective, distance, clock, radio, banners, dialogue, speedometer, key hint.
 // EXPORTS: missionLabel, distanceLine, hintLine, initHud, pushNotice, updateHud
+// USES: config.js, city.js, police.js, radio.js, districts.js, clock.js
 //
 // HUD: wanted stars, cash, health and armour, weapon, speed, minimap with blips and the mission
 // marker, mission objective and timer, dialogue subtitles, 1.5 s notices for anything that costs or

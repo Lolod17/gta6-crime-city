@@ -1,3 +1,6 @@
+<!-- JOB: the log of design decisions taken while building, with their reasons.
+     EXPORTS: nothing (documentation)
+     USES: nothing -->
 # NOTES — decisions taken while building (no questions asked, conservative choices)
 
 - **Original setting.** The game is *SUNDOWN: Puerto Ámbar*: an invented coastal city, the PAPD,

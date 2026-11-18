@@ -1,5 +1,6 @@
 // render/world.js — JOB: the city and its static scenery on screen: the ground-chunk cache, water and boats, tree canopies and buildings in depth order, and the light (golden hour, dusk, streetlamps, vignette).
 // EXPORTS: createRenderer, warmGround, resizeRenderer, drawGround, drawWater, drawBoats, drawScenery, drawLight
+// USES: ../config.js, ../city.js, ../clock.js, draw.js
 // MUST NOT: draw cars, people, police or effects (render/entities.js, render/fx.js), or change the city data.
 import { WORLD, CAMERA } from '../config.js';
 import { roadCenter, ROADS_X, ROADS_Y } from '../city.js';

@@ -1,5 +1,6 @@
 // city/collide.js — JOB: the spatial hash of solids and the queries on it: what is near a point, is a point blocked, line of sight, segment-vs-rect tests.
 // EXPORTS: hashSolids, solidsNear, isBlocked, lineOfSight, segmentHitsRect, segmentEnterRect
+// USES: ../config.js
 // MUST NOT: generate or change the city (except hashSolids filling city.grid once at build time).
 import { WORLD } from '../config.js';
 

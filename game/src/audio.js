@@ -1,6 +1,7 @@
 // audio.js — JOB: all sound, synthesised with WebAudio: engine, siren, screech, gunfire, crashes, ambience
 //   and the radio theme.
 // EXPORTS: initAudio, sfx, setListener, updateAudio
+// USES: config.js
 //
 // WebAudio synthesis, no samples: an engine whose pitch climbs through five gears, the PAPD siren
 // wail (loudest from the nearest cruiser in pursuit), tyre screech, gunshots, crashes, explosions,

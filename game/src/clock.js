@@ -1,7 +1,8 @@
 // clock.js — JOB: the in-game time of day: where each story day's clock starts, how it runs with play,
 // how the HUD prints it, and how deep the dusk is at any minute. Cosmetic only: the simulation never
-// reads it; hud.js prints it and render.js grades the city by it.
+// reads it; hud.js prints it and render/world.js grades the city by it.
 // EXPORTS: DAY_OPENS, advanceClock, resetClock, clockParts, duskAmount
+// USES: config.js
 import { CLOCK } from './config.js';
 
 /** Every day of the story opens at dusk, 18:24. */

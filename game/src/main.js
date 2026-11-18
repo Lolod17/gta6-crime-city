@@ -1,6 +1,7 @@
 // main.js — JOB: boot, input, the fixed-step loop and the screen state machine (title, play, pause, dead,
 //   briefing, shop).
 // EXPORTS: state (the one shared game state; it also boots and runs the game on load)
+// USES: config.js, city.js, render.js, camera.js, player.js, vehicle.js, traffic.js, police.js, jobs.js, missions.js, activities.js, story.js, districts.js, clock.js, radio.js, shop.js, witnesses.js, hud.js, audio.js, persist.js
 //
 // SUNDOWN: Puerto Ámbar — boot, the fixed-step loop, input, and the state machine
 // (title -> play <-> pause, play -> dead -> play, play -> job briefing -> play, play -> shop -> play).

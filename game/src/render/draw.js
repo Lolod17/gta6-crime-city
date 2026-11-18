@@ -1,5 +1,6 @@
 // render/draw.js — JOB: the drawing primitives: rounded rects, colour shading, the baked ground chunk (roads, lots, sand, shadows), extruded buildings, and the camera view box.
 // EXPORTS: CHUNK, roundRect, shade, drawGroundInto, drawBuilding, view, visible
+// USES: ../config.js, ../city.js
 // MUST NOT: read game state (player, cars, wanted level) or own any loop; it draws what it is handed.
 import { WORLD, COLORS, CAMERA } from '../config.js';
 import { roadCenter, ROADS_X, ROADS_Y, makeRng } from '../city.js';

@@ -1,6 +1,7 @@
 // police.js — JOB: the PAPD: heat and wanted stars, cruisers, cops on foot, the helicopter, and escape.
 // EXPORTS: createWanted, starsFor, evadeTime, reportCrime, addHeat, setWanted, lowerWanted, clearWanted,
 //   updatePolice, dressCop, createHeli, onEjectCop
+// USES: config.js, city.js, vehicle.js, traffic.js, player.js, render.js, audio.js
 //
 // The Puerto Ámbar Police Department: heat and wanted stars, patrol cruisers, pursuit that hunts
 // the player through the street grid and rams, cops on foot who arrest or shoot, a helicopter
