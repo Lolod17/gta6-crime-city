@@ -1,6 +1,6 @@
 // traffic/spawn.js — JOB: where city life comes from: the lane geometry of the street grid, people, parked
 //   cars, civilian cars and pedestrians spawned in a ring off screen, and THE TAIL's lane car.
-// EXPORTS: LANE, DIRS, laneX, laneY, validDir, pickTurn, loopPoint, nearestLoopS, makePerson, initTraffic, populate, spawnCar, spawnPed, spawnLaneCar
+// EXPORTS: LANE, DIRS, laneX, laneY, validDir, pickTurn, loopPoint, nearestLoopS, makePerson, initTraffic, populate, topUpCrowd, spawnCar, spawnPed, spawnLaneCar
 // USES: ../config.js, ../city.js, ../vehicle.js
 // MUST NOT: steer, brake or move anything after it is placed (that is traffic/behaviour.js).
 import { TRAFFIC, WORLD } from '../config.js';
@@ -79,10 +79,31 @@ export function initTraffic(state) {
   }
 }
 
-/** Fill the streets around the player at once (game start, respawn), on screen included. */
+/** Place n civilians: about 65% on the pavement 150-680 px from the camera, the rest anywhere from 60 px out. */
+function placePeds(state, n) {
+  const cam = state.camera || state.player;
+  const near = Math.round(n * 0.65);
+  let placed = 0;
+  for (let k = 0; placed < n && k < n * 4; k += 1) {
+    const ped = placed < near ? spawnPed(state, 150, 680, cam) : spawnPed(state, 60);
+    if (ped) placed += 1;
+  }
+}
+
+/** Fill the streets around the player at once (fresh start), on screen included. */
 export function populate(state) {
   for (let k = 0; k < TRAFFIC.cars; k += 1) spawnCar(state, 160);
-  for (let k = 0; k < TRAFFIC.peds; k += 1) spawnPed(state, 60);
+  placePeds(state, TRAFFIC.peds);
+}
+
+/** Respawn: count the civilians and AI cars still alive near the player and spawn only the gap to config counts. */
+export function topUpCrowd(state) {
+  const p = state.player;
+  const near = (o) => Math.hypot(o.x - p.x, o.y - p.y) <= TRAFFIC.despawn;
+  const cars = state.vehicles.filter((v) => v.driver === 'ai' && near(v)).length;
+  const peds = state.peds.filter((ped) => ped.kind === 'civ' && !ped.dead && near(ped)).length;
+  for (let k = cars; k < TRAFFIC.cars; k += 1) spawnCar(state, 160);
+  placePeds(state, Math.max(0, TRAFFIC.peds - peds));
 }
 
 function spawnCar(state, minDist = TRAFFIC.spawnMin) {
@@ -110,8 +131,9 @@ function spawnCar(state, minDist = TRAFFIC.spawnMin) {
 }
 
 
-function spawnPed(state, minDist = TRAFFIC.spawnMin * 0.8) {
-  const p = state.player;
+/** One civilian on a sidewalk loop between minDist and maxDist px of origin (the player by default). */
+function spawnPed(state, minDist = TRAFFIC.spawnMin * 0.8, maxDist = TRAFFIC.spawnMax, origin = state.player) {
+  const p = origin;
   const rng = state.rng;
   for (let tries = 0; tries < 6; tries += 1) {
     const b = rng.pick(state.city.blocks);
@@ -119,12 +141,13 @@ function spawnPed(state, minDist = TRAFFIC.spawnMin * 0.8) {
     const s = rng.range(0, 4 * BLOCK_SIZE);
     const pt = loopPoint(b, s);
     const d = Math.hypot(pt.x - p.x, pt.y - p.y);
-    if (d < minDist || d > TRAFFIC.spawnMax) continue;
+    if (d < minDist || d > maxDist) continue;
     const ped = makePerson('civ', pt.x, pt.y, rng);
     ped.block = b; ped.s = s; ped.health = TRAFFIC.pedHealth;
     state.peds.push(ped);
-    return;
+    return ped;
   }
+  return null;
 }
 
 
